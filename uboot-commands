@@ -1,0 +1,8 @@
+# Network boot
+dhcp
+setenv bootargs "loader.efi rootdev=net0"
+load mmc 0:1 0x02600000 bcm2711-rpi-4-b.dtb
+load mmc 0:1 0x00080000 efi/boot/bootaa64.efi 
+fdt addr 0x02600000
+setenv fdtcontroladdr 3af499a0
+bootefi 0x00080000 ${fdtcontroladdr}
