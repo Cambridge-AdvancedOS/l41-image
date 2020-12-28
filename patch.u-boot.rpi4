@@ -1,0 +1,26 @@
+diff --git a/board/raspberrypi/rpi/Kconfig b/board/raspberrypi/rpi/Kconfig
+index e40088fde1..c7d926c9a6 100644
+--- a/board/raspberrypi/rpi/Kconfig
++++ b/board/raspberrypi/rpi/Kconfig
+@@ -2,7 +2,7 @@ if SYS_BOARD = "rpi"
+ 
+ config RPI_EFI_NR_SPIN_PAGES
+ 	int "Spin table page count"
+-	default 1
++	default 10
+ 	help
+ 	  Number of pages to reserve starting at page 0 for spin tables in the EFI
+ 	  memory map
+diff --git a/configs/rpi_4_defconfig b/configs/rpi_4_defconfig
+index 2590d0a696..4010120113 100644
+--- a/configs/rpi_4_defconfig
++++ b/configs/rpi_4_defconfig
+@@ -11,7 +11,7 @@ CONFIG_PREBOOT="pci enum; usb start;"
+ # CONFIG_DISPLAY_CPUINFO is not set
+ # CONFIG_DISPLAY_BOARDINFO is not set
+ CONFIG_MISC_INIT_R=y
+-CONFIG_SYS_PROMPT="U-Boot> "
++CONFIG_SYS_PROMPT="l41> "
+ CONFIG_CMD_DFU=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MMC=y
