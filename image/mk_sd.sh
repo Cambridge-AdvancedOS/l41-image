@@ -1,3 +1,5 @@
+#!/bin/sh
+
 rm -f sdcard.img.gz sdcard.img
 truncate -s 2000M sdcard.img
 mdconfig -u0 sdcard.img || exit 1
@@ -27,10 +29,11 @@ umount /mnt
 newfs_msdos /dev/md0s1
 mount_msdosfs /dev/md0s1 /mnt
 cp -R ../firmware-rpi4-8g/* /mnt/
+mv uboot.env /mnt/ || echo cant copy uboot.env
 umount /mnt
 
 mdconfig -d -u0
 gzip sdcard.img
 
-#dd if=ubldr of=sdcard.img bs=512 seek=49170 conv=notrunc
+#TODO: seek is not correct
 #dd if=rootfs.img of=sdcard.img bs=512 seek=114675 conv=notrunc
