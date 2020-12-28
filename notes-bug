@@ -1,0 +1,63 @@
+The bug I see when I boot GENERIC (debugging enabled) kernel with root over NFS.
+There is no bug when using GENERIC-NODEBUG kernel.
+
+genet0 at 10.8.0.150 server 10.8.0.1 boot file l41/kernel
+subnet mask 255.255.255.0 router 10.8.0.1 rootfs 10.8.0.1:/mnt/tftpboot/l41root 
+Adjusted interface genet0
+panic: sleepq_add: td 0xffff000000dbdb20 to sleep on wchan 0xffffa00001b10cd4 with sleeping prohibited
+cpuid = 0
+time = 22
+KDB: stack backtrace:
+db_trace_self() at db_trace_self_wrapper+0x30
+	 pc = 0xffff0000007fad14  lr = 0xffff0000001cbfbc
+	 sp = 0xffff0000000cb220  fp = 0xffff0000000cb420
+
+db_trace_self_wrapper() at vpanic+0x194
+	 pc = 0xffff0000001cbfbc  lr = 0xffff000000501a74
+	 sp = 0xffff0000000cb430  fp = 0xffff0000000cb490
+
+vpanic() at panic+0x44
+	 pc = 0xffff000000501a74  lr = 0xffff00000050181c
+	 sp = 0xffff0000000cb4a0  fp = 0xffff0000000cb550
+
+panic() at sleepq_add+0x2d8
+	 pc = 0xffff00000050181c  lr = 0xffff00000055ba38
+	 sp = 0xffff0000000cb560  fp = 0xffff0000000cb560
+
+sleepq_add() at _sleep+0x1d4
+	 pc = 0xffff00000055ba38  lr = 0xffff00000050d414
+	 sp = 0xffff0000000cb570  fp = 0xffff0000000cb610
+
+_sleep() at soreceive_generic+0x210
+	 pc = 0xffff00000050d414  lr = 0xffff00000059f894
+	 sp = 0xffff0000000cb620  fp = 0xffff0000000cb6d0
+
+soreceive_generic() at soreceive+0x50
+	 pc = 0xffff00000059f894  lr = 0xffff0000005a1058
+	 sp = 0xffff0000000cb6e0  fp = 0xffff0000000cb730
+
+soreceive() at krpc_call+0x364
+	 pc = 0xffff0000005a1058  lr = 0xffff0000006e6e70
+	 sp = 0xffff0000000cb740  fp = 0xffff0000000cb7f0
+
+krpc_call() at krpc_portmap+0xcc
+	 pc = 0xffff0000006e6e70  lr = 0xffff0000006e6a78
+	 sp = 0xffff0000000cb800  fp = 0xffff0000000cb860
+
+krpc_portmap() at bootpc_init+0xeb0
+	 pc = 0xffff0000006e6a78  lr = 0xffff0000006e5600
+	 sp = 0xffff0000000cb870  fp = 0xffff0000000cb9e0
+
+bootpc_init() at mi_startup+0x12c
+	 pc = 0xffff0000006e5600  lr = 0xffff00000048e858
+	 sp = 0xffff0000000cb9f0  fp = 0xffff0000000cba50
+
+mi_startup() at virtdone+0x64
+	 pc = 0xffff00000048e858  lr = 0xffff0000000010d8
+	 sp = 0xffff0000000cba60  fp = 0x0000000000000000
+
+KDB: enter: panic
+[ thread pid 0 tid 100000 ]
+Stopped at      0
+db> 
+
