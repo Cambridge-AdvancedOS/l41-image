@@ -1,12 +1,12 @@
 #!/bin/sh
 
 rm -f sdcard.img.gz sdcard.img
-truncate -s 2000M sdcard.img
+truncate -s 6000M sdcard.img
 mdconfig -u0 sdcard.img || exit 1
 
 gpart create -s MBR md0
 gpart add -s 128m -t '!4' md0		# msdos (firmware)
-gpart add -s 1200M -t freebsd md0	# /
+gpart add -s 4G -t freebsd md0		# /
 gpart add -t freebsd md0		# BSD labels
 gpart set -a active -i 1 md0
 
