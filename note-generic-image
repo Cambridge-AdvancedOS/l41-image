@@ -1,0 +1,13 @@
+Partitions of the generic RPI3/4 image (downloaded from ftp.freebsd.org)
+
+root@generic:~ # gpart show
+=>       63  124735425  mmcsd0  MBR  (59G)
+         63       2016          - free -  (1.0M)
+       2079     102312       1  fat32lba  [active]  (50M)
+     104391  124627001       2  freebsd  (59G)
+  124731392       4096          - free -  (2.0M)
+
+=>        0  124627001  mmcsd0s2  BSD  (59G)
+          0         57            - free -  (29K)
+         57  124626944         1  freebsd-ufs  (59G)
+
