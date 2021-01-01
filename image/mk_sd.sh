@@ -29,7 +29,7 @@ umount /mnt
 newfs_msdos /dev/md0s1
 mount_msdosfs /dev/md0s1 /mnt
 cp -R ../firmware-rpi4-8g/* /mnt/
-mv uboot.env /mnt/ || echo cant copy uboot.env
+cp uboot.env /mnt/ || echo cant copy uboot.env
 umount /mnt
 
 mdconfig -d -u0
