@@ -1,0 +1,12 @@
+./etc/fstab type=file uname=root gname=wheel mode=644
+./etc/rc.conf type=file uname=root gname=wheel mode=644
+./benchmarks type=dir uname=root gname=wheel mode=755
+./home type=dir uname=root gname=wheel mode=755
+./data type=dir uname=root gname=wheel mode=755
+./usr/local/etc type=dir uname=root gname=wheel mode=0755
+./usr/local/etc/sudoers type=file uname=root gname=wheel mode=440
+./usr/local/etc/pkg type=dir uname=root gname=wheel mode=0755
+./usr/local/etc/pkg/repos type=dir uname=root gname=wheel mode=0755
+./usr/local/etc/pkg/repos/FreeBSD.conf type=file uname=root gname=wheel mode=644
+./etc/freebsd_git_hash type=file uname=root gname=wheel mode=644
+./etc/shells type=file uname=root gname=wheel mode=644
