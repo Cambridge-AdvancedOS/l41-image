@@ -1,11 +1,11 @@
 #!/bin/sh
 
 rm -f sdcard.img.gz sdcard.img
-truncate -s 3201M sdcard.img
+truncate -s 4G sdcard.img
 mdconfig -u0 sdcard.img || exit 1
 
 gpart create -s MBR md0
-gpart add -s 128m -t '!4' md0		# msdos (firmware)
+gpart add -s 128m -t fat32lba md0	# msdos (firmware)
 gpart add -s 3072m -t freebsd md0	# /
 gpart set -a active -i 1 md0
 
@@ -20,4 +20,4 @@ mdconfig -d -u0
 gzip sdcard.img
 
 # Use this command in jenkins
-#dd if=rootfs.img of=sdcard.img bs=512 seek=262177 conv=notrunc
+#dd if=rootfs.img of=sdcard.img bs=512 seek=262207 conv=notrunc
