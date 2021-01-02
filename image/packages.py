@@ -12,9 +12,12 @@ PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
 PACKAGES = [
 	'python27-2.7.18_1.txz',
-	'git-2.29.2.txz',
 	'sudo-1.9.4p2.txz',
 	'bash-5.1.4.txz',
+	'indexinfo-0.3.1.txz',
+	'readline-8.0.4.txz',
+	'gettext-runtime-0.21.txz',
+	'libffi-3.3_1.txz',
 	]
 
 for dir in [TMP, DISTFILES]:
