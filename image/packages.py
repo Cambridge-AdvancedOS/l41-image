@@ -14,6 +14,7 @@ PACKAGES = [
 	'python27-2.7.18_1.txz',
 	'git-2.29.2.txz',
 	'sudo-1.9.4p2.txz',
+	'bash-5.1.4.txz',
 	]
 
 for dir in [TMP, DISTFILES]:
