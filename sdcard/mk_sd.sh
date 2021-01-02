@@ -35,5 +35,5 @@ umount /mnt
 mdconfig -d -u0
 gzip sdcard.img
 
-#TODO: seek is not correct
-#dd if=rootfs.img of=sdcard.img bs=512 seek=114675 conv=notrunc
+# Use this command in jenkins
+#dd if=rootfs.img of=sdcard.img bs=512 seek=262207 conv=notrunc
