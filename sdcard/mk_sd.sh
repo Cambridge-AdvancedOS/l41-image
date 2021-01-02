@@ -6,7 +6,7 @@ mdconfig -u0 sdcard.img || exit 1
 
 gpart create -s MBR md0
 gpart add -s 128m -t fat32lba md0	# msdos (firmware)
-gpart add -s 3072m -t freebsd md0	# /
+gpart add -s 3200m -t freebsd md0	# /
 gpart set -a active -i 1 md0
 
 # Provide boot command for u-boot
