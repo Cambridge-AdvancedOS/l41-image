@@ -1,1 +1,2 @@
 /dev/mmcsd0s2 / ufs rw,noatime 1 1
+tmpfs /tmp tmpfs rw,mode=1777,size=256m 0 0
