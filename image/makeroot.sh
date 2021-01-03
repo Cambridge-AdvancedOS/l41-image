@@ -264,7 +264,7 @@ if [ -n "${FREEINODES}" ]; then
 FREEINODESFLAG="-f ${FREEINODES}"
 fi
 
-makefs_command="makefs -o version=2 ${DUPFLAG} -N ${DBDIR} ${SIZEFLAG} ${BFLAG} \
+makefs_command="makefs -o version=2,label=rootfs ${DUPFLAG} -N ${DBDIR} ${SIZEFLAG} ${BFLAG} \
      ${DEBUGFLAG_MAKEFS} -t ${FSTYPE} ${FREEINODESFLAG} ${EXTRA_MAKEFS_FLAGS} ${IMGFILE} ${manifest}"
 # Allow building .tar archives in addition to ffs/ISO images
 if [ "$FSTYPE" == "tar" ]; then
