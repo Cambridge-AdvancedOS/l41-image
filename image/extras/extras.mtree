@@ -3,6 +3,7 @@
 ./firstboot type=file uname=root gname=wheel mode=644
 ./home type=dir uname=root gname=wheel mode=755
 ./home/guest type=dir uid=1001 gid=31 mode=755
+./usr/swap0 type=file uname=root gname=wheel mode=600
 ./usr/local/etc type=dir uname=root gname=wheel mode=0755
 ./usr/local/etc/sudoers type=file uname=root gname=wheel mode=440
 ./usr/local/etc/pkg type=dir uname=root gname=wheel mode=0755
