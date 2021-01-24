@@ -10,8 +10,10 @@ DIRS = []
 
 PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
+packages_file = sys.argv[1]
+
 PACKAGES = []
-f = open("packages-node", "r")
+f = open(packages_file, "r")
 for line in f:
 	l = line.strip().split(": ")
 	p = "%s-%s.txz" % (l[0], l[1])
