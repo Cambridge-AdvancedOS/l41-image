@@ -75,7 +75,7 @@ for file, link, mode in FILES:
 	if link:
 		f.write('./%s type=link uname=root'
 			' gname=wheel mode=%s link=%s\n' % \
-			(file.replace(" ","\ "), mode, link))
+			(file.replace(" ","\s"), mode, link))
 	else:
 		f.write('./%s type=file uname=root gname=wheel mode=%s\n' % \
 			(file.replace(" ","\s"), mode))
