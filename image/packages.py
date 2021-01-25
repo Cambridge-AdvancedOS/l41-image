@@ -72,6 +72,9 @@ for file, link, mode in FILES:
 	mode = oct(mode & 0xfff)
 	if file == 'usr/local/bin/sudo':
 		mode = '04555'
+	# not sure how to use mtree with space in the filename
+	if ' ' in file:
+		continue
 	if link:
 		f.write('./%s type=link uname=root'
 			' gname=wheel mode=%s link=%s\n' % \
