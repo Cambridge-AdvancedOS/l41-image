@@ -5,12 +5,12 @@ truncate -s 16G sdcard.img
 mdconfig -u0 sdcard.img || exit 1
 
 gpart create -s MBR md0
-gpart add -s 128m -t fat32lba md0		# msdos (firmware)
+gpart add -b 2079 -s 128m -t fat32lba md0		# msdos (firmware)
 gpart add -s 15G -t freebsd md0			# BSD labels
 gpart set -a active -i 1 md0
 
 gpart create -s BSD md0s2
-gpart add -t freebsd-ufs md0s2		# /
+gpart add -b 57 -t freebsd-ufs md0s2		# /
 
 # Provide boot command for u-boot
 newfs_msdos /dev/md0s1
@@ -22,4 +22,4 @@ umount /mnt
 mdconfig -d -u0
 
 # Use this command in jenkins
-#dd if=rootfs.img of=sdcard.img bs=512 seek=262207 conv=notrunc
+#dd if=rootfs.img of=sdcard.img bs=512 seek=264223 conv=notrunc
