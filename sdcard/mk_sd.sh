@@ -22,4 +22,4 @@ umount /mnt
 mdconfig -d -u0
 
 # Use this command in jenkins
-#dd if=rootfs.img of=sdcard.img bs=512 seek=264223 conv=notrunc
+#dd if=rootfs.img of=sdcard.img bs=512 seek=264280 conv=notrunc
