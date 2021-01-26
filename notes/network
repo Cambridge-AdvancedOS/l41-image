@@ -1,0 +1,8 @@
+FYI, here are the network details for the L41 network segment, in case they prove useful (edited to add later Malcolm comment on which addresses to use):
+
+    I've created VLAN 790 "advopsys-cluster" ready for when you need it.
+    IPv4 subnet: 128.232.25.128/25
+    IPv4 router: 128.232.25.129
+    IPv6 prefix: 2a05:b400:110:70::/64
+
+Avoid addresses below 128.232.25.135 please (sorry, should have mentioned)..129, .130 and .132 are currently in use by our routers; we prefer to reserve a few more for future router use.
