@@ -15,3 +15,6 @@
 ./etc/pkg type=dir uname=root gname=wheel mode=0755
 ./etc/pkg/FreeBSD.conf type=file uname=root gname=wheel mode=0644
 ./boot/loader.conf type=file uname=root gname=wheel mode=644
+./root type=dir uname=root gname=wheel mode=0755
+./root/.ssh type=dir uname=root gname=wheel mode=0700
+./root/.ssh/authorized_keys type=file uname=root gname=wheel mode=0600
