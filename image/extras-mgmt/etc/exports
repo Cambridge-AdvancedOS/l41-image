@@ -1,1 +1,1 @@
-/tftpboot/ -maproot=all -alldirs 128.232.25.128/25
+/tftpboot/ -mapall=root -alldirs -network 128.232.25.128 -mask 255.255.255.128
