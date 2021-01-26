@@ -11,6 +11,7 @@ DIRS = []
 PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
 packages_file = sys.argv[1]
+mtree_file = sys.argv[2]
 
 PACKAGES = []
 f = open(packages_file, "r")
@@ -61,7 +62,7 @@ for pkg in PACKAGES:
 for w in os.walk(os.path.join(TMP, "usr")):
 	DIRS.append(w[0].replace(TMP, ""))
 
-f = open(os.path.join(TMP, "pkg.mtree"),"w")
+f = open(os.path.join(TMP, mtree_file),"w")
 f.write("#mtree 2.0\n")
 
 for dir in DIRS:
