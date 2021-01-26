@@ -1,5 +1,4 @@
 ./etc/fstab type=file uname=root gname=wheel mode=644
-./etc/rc.conf type=file uname=root gname=wheel mode=644
 ./firstboot type=file uname=root gname=wheel mode=644
 ./home type=dir uname=root gname=wheel mode=755
 ./home/guest type=dir uid=1001 gid=31 mode=755
