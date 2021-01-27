@@ -45,7 +45,7 @@ for pkg in PACKAGES:
 		sys.exit(2)
 
 	print 'Adding package %s' % pkg
-	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -M %s/%s' % \
+	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -IM %s/%s' % \
 		(ROOTFS, DISTFILES, pkg)
 	status, output = getstatusoutput(l)
 	if status != 0:
