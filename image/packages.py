@@ -12,6 +12,7 @@ PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
 packages_file = sys.argv[1]
 mtree_file = sys.argv[2]
+ROOTFS = sys.argv[3]
 
 PACKAGES = []
 f = open(packages_file, "r")
@@ -42,6 +43,13 @@ for pkg in PACKAGES:
 				(TMP, DISTFILES, pkg))
 	if status != 0:
 		sys.exit(2)
+
+	print 'Installing package %s' % pkg
+	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s install %s/%s' % \
+		(ROOTFS, DISTFILES, pkg))
+	status, output = getstatusoutput(l)
+	if status != 0:
+		sys.exit(3)
 
 	f = open(os.path.join(TMP,"+MANIFEST"),"r")
 	m = f.read()
