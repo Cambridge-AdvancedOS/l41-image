@@ -46,7 +46,7 @@ for pkg in PACKAGES:
 
 	print 'Installing package %s' % pkg
 	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s install %s/%s' % \
-		(ROOTFS, DISTFILES, pkg))
+		(ROOTFS, DISTFILES, pkg)
 	status, output = getstatusoutput(l)
 	if status != 0:
 		sys.exit(3)
