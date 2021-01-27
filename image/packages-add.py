@@ -16,7 +16,7 @@ for line in f:
 
 for pkg in PACKAGES:
 	print 'Adding package %s' % pkg
-	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -yM %s' % \
+	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -M %s' % \
 		(ROOTFS, pkg)
 	status, output = getstatusoutput(l)
 	if status != 0:
