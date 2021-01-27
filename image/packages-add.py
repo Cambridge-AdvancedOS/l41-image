@@ -18,6 +18,7 @@ for pkg in PACKAGES:
 	print 'Adding package %s' % pkg
 	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s install -yM %s' % \
 		(ROOTFS, pkg)
+	print(l)
 	status, output = getstatusoutput(l)
 	if status != 0:
 		print(output)
