@@ -49,6 +49,7 @@ for pkg in PACKAGES:
 		(ROOTFS, DISTFILES, pkg)
 	status, output = getstatusoutput(l)
 	if status != 0:
+		print(output)
 		sys.exit(3)
 
 	f = open(os.path.join(TMP,"+MANIFEST"),"r")
