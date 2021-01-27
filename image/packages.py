@@ -11,8 +11,7 @@ PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
 packages_file = sys.argv[1]
 mtree_file = sys.argv[2]
-ROOTFS = sys.argv[3]
-DISTFILES = sys.argv[4]
+DISTFILES = sys.argv[3]
 
 PACKAGES = []
 f = open(packages_file, "r")
