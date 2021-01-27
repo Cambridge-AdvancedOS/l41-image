@@ -44,6 +44,7 @@ for pkg in PACKAGES:
 	if status != 0:
 		sys.exit(2)
 
+	'''
 	print 'Adding package %s' % pkg
 	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -IM %s/%s' % \
 		(ROOTFS, DISTFILES, pkg)
@@ -51,6 +52,7 @@ for pkg in PACKAGES:
 	if status != 0:
 		print(output)
 		sys.exit(3)
+	'''
 
 	f = open(os.path.join(TMP,"+MANIFEST"),"r")
 	m = f.read()
