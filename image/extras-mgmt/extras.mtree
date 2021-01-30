@@ -1,4 +1,5 @@
 ./tftpboot type=dir uname=root gname=wheel mode=755
 ./etc/exports type=file uname=root gname=wheel mode=644
 ./etc/inetd.conf type=file uname=root gname=wheel mode=644
+./etc/resolv.conf type=file uname=root gname=wheel mode=644
 ./usr/local/etc/dhcpd.conf type=file uname=root gname=wheel mode=0644
