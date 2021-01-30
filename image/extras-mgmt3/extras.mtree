@@ -1,0 +1,1 @@
+./etc/rc.conf type=file uname=root gname=wheel mode=644
