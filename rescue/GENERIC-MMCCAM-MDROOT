@@ -1,0 +1,15 @@
+#
+# GENERIC-MMCCAM-MDROOT
+#
+# L41 rescue kernel
+#
+# $FreeBSD$
+
+#NO_UNIVERSE
+
+include		GENERIC-MMCCAM
+ident		GENERIC-MMCCAM-MDROOT
+
+options		MD_ROOT
+options		MD_ROOT_SIZE=32768      # 32MB ram disk
+options		ROOTDEVNAME=\"ufs:/dev/md0\"
