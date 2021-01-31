@@ -100,7 +100,7 @@
         py37-importlib-metadata: 3.3.0_1
         py37-incremental: 17.5.0
         py37-ipykernel5: 5.4.2
-        py37-ipython: 7.19.0_1
+        py37-ipython: 7.19.0_2
         py37-ipython_genutils: 0.2.0
         py37-jedi: 0.18.0_1
         py37-json5: 0.9.5
