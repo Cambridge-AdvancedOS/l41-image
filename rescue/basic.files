@@ -188,6 +188,7 @@ usr/lib/libopie.so.8
 usr/lib/libpam.so.6
 usr/lib/libprocstat.so.1
 usr/lib/libroken.so.11
+usr/lib/libssl.so.111
 usr/lib/libusb.so.3
 usr/lib/libwind.so.11
 usr/lib/libwrap.so.6
