@@ -79,7 +79,7 @@
         py37-async_generator: 1.10
         py37-attrs: 20.3.0
         py37-backcall: 0.2.0
-        py37-bcrypt: 3.1.7_1
+        py37-bcrypt: 3.2.0
         py37-bleach: 3.1.5
         py37-bottleneck: 1.3.2
         py37-certifi: 2020.12.5
