@@ -147,8 +147,6 @@ usr/bin/grep
 usr/bin/hd
 usr/bin/head
 usr/bin/hexdump
-usr/bin/kdump
-usr/bin/ktrace
 usr/bin/ldd
 usr/bin/limits
 usr/bin/login
