@@ -78,6 +78,7 @@ etc/termcap
 lib
 lib/casper
 lib/casper/libcap_dns.so.2
+lib/casper/libcap_syslog.so.1
 lib/lib80211.so.1
 lib/libbsdxml.so.4
 lib/libc.so.7
@@ -141,6 +142,7 @@ sbin/umount
 tmp
 usr/bin/basename
 usr/bin/bunzip2
+usr/bin/bzip2
 usr/bin/clear
 usr/bin/dirname
 usr/bin/grep
