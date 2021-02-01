@@ -138,6 +138,7 @@ sbin/rtsol
 sbin/sha256
 sbin/shutdown
 sbin/sysctl
+sbin/tunefs
 sbin/umount
 tmp
 usr/bin/basename
@@ -146,6 +147,7 @@ usr/bin/bzip2
 usr/bin/clear
 usr/bin/dirname
 usr/bin/grep
+usr/bin/gzip
 usr/bin/hd
 usr/bin/head
 usr/bin/hexdump
@@ -186,6 +188,7 @@ usr/lib/libgssapi_krb5.so.10
 usr/lib/libheimbase.so.11
 usr/lib/libhx509.so.11
 usr/lib/libkrb5.so.11
+usr/lib/liblzma.so.5
 usr/lib/libmemstat.so.3
 usr/lib/libnetgraph.so.4
 usr/lib/libopie.so.8
