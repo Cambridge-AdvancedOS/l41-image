@@ -28,8 +28,6 @@ reboot_node(mcp2221_t *myDev)
 
 	puts("done");
 
-	return (0);
-
 	res = mcp2221_setGPIO(myDev, MCP2221_GPIO3, MCP2221_GPIO_VALUE_LOW);
 	if(res != MCP2221_SUCCESS)
 		return (-1);
@@ -39,6 +37,8 @@ reboot_node(mcp2221_t *myDev)
 	res = mcp2221_setGPIO(myDev, MCP2221_GPIO3, MCP2221_GPIO_VALUE_HIGH);
 	if(res != MCP2221_SUCCESS)
 		return (-2);
+
+	printf("Node rebooted successfully\n");
 
 	return (0);
 }
