@@ -20,11 +20,13 @@ reboot_node(mcp2221_t *myDev)
 	gpioConf.conf[0].mode		= MCP2221_GPIO_MODE_GPIO;
 	gpioConf.conf[0].direction	= MCP2221_GPIO_DIR_OUTPUT;
 
-	// Apply config
+	/* Apply config */
 	mcp2221_setGPIOConf(myDev, &gpioConf);
 
-	// Also save config to flash
-	mcp2221_saveGPIOConf(myDev, &gpioConf);
+	/*
+	 * Also save config to flash
+	 * mcp2221_saveGPIOConf(myDev, &gpioConf);
+	 */
 
 	puts("done");
 
