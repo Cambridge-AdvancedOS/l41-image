@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 
 	puts("Starting!");
 
-	if (argc < 3) {
+	if (argc != 3) {
 		printf("Usage: %s idx serial\n", argv[0]);
 		return (-1);
 	}
