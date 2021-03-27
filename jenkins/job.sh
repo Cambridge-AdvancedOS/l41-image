@@ -4,7 +4,7 @@ uname -a
 export TARGET=arm64
 export MAKEOBJDIRPREFIX=$WORKSPACE/obj/
 export HEAD=$WORKSPACE/freebsd
-export KERNCONF=GENERIC-MMCCAM
+export KERNCONF=ADVOPSYS
 export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
