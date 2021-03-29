@@ -8,7 +8,7 @@ export KERNCONF=ADVOPSYS
 export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
-rm -rf tmp *.img *img.gz
+rm -rf tmp *.img *img.gz kernel.rescue*
 rm -rf rootfs
 mkdir -p obj rootfs
 
@@ -45,11 +45,11 @@ cp $WORKSPACE/l41-image/rescue/GENERIC-MMCCAM-MDROOT $HEAD/sys/arm64/conf/
 #
 # Build FreeBSD
 #
-#rm -rf obj
-#cd $HEAD && \
-#make -j${NCPU} kernel-toolchain && \
-#make -j${NCPU} buildkernel && \
-#make -j${NCPU} buildworld || exit $?
+rm -rf obj
+cd $HEAD && \
+make -j${NCPU} kernel-toolchain && \
+make -j${NCPU} buildkernel && \
+make -j${NCPU} buildworld || exit $?
 
 #
 # Build kernel only
@@ -78,12 +78,7 @@ truncate -s 8G $WORKSPACE/l41-image/image/extras/usr/swap0
 # Create rescue mdroot fs. 32mb
 #
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
-  -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
-  -g $WORKSPACE/l41-image/image/extras/etc/group \
-  -s 33554432 \
-  -e $WORKSPACE/l41-image/image/extras/extras.mtree \
-  -e $WORKSPACE/l41-image/image/extras-node/extras.mtree \
-  -f $WORKSPACE/l41-image/rescue/basic.files \
+  -s 33554432 -f $WORKSPACE/l41-image/rescue/basic.files \
   -d $WORKSPACE/rootfs-rescue.img $WORKSPACE/rootfs/ || exit $?
 
 #
@@ -146,6 +141,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 #
 cp $WORKSPACE/obj/usr/local/jenkins/workspace/l41-rpi4-image/freebsd/arm64.aarch64/sys/GENERIC-MMCCAM-MDROOT/kernel $WORKSPACE/kernel.rescue && \
 sh $HEAD/sys/tools/embed_mfs.sh kernel.rescue $WORKSPACE/rootfs-rescue.img || exit $?
+gzip kernel.rescue || exit $?
 
 #
 # SD card node image
@@ -184,9 +180,13 @@ dd if=rootfs-mgmt3.img of=sdcard-mgmt3.img bs=512 seek=264280 conv=notrunc && \
 gzip sdcard-mgmt3.img || exit $?
 
 #
+# Needed for rescue procedures
+#
+gzip $WORKSPACE/rootfs-node.img
+
+#
 # Optional artifact
 #
-#gzip $WORKSPACE/rootfs-node.img
 #gzip $WORKSPACE/rootfs-mgmt1.img
 #gzip $WORKSPACE/rootfs-mgmt2.img
 #gzip $WORKSPACE/rootfs-mgmt3.img
