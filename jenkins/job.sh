@@ -87,7 +87,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
   -g $WORKSPACE/l41-image/image/extras/etc/group \
-  -s 4928307200 -F 10000 \
+  -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-node/extras.mtree \
   -e $WORKSPACE/tmp/node.mtree \
@@ -100,7 +100,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
   -g $WORKSPACE/l41-image/image/extras/etc/group \
-  -s 4928307200 -F 10000 \
+  -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt1/extras.mtree \
@@ -114,7 +114,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
   -g $WORKSPACE/l41-image/image/extras/etc/group \
-  -s 4928307200 -F 10000 \
+  -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt2/extras.mtree \
@@ -128,7 +128,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
   -g $WORKSPACE/l41-image/image/extras/etc/group \
-  -s 4928307200 -F 10000 \
+  -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt3/extras.mtree \
