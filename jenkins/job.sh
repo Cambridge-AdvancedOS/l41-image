@@ -147,8 +147,8 @@ bzip2 kernel.rescue || exit $?
 # SD card node image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-node/sdcard.img.bz2 $WORKSPACE/sdcard-node.img.bz2 && \
-gunzip sdcard-node.img.bz2 && \
+cp $WORKSPACE/l41-image/sdcard-node/sdcard.img.gz $WORKSPACE/sdcard-node.img.gz && \
+gunzip sdcard-node.img.gz && \
 dd if=rootfs-node.img of=sdcard-node.img bs=512 seek=264280 conv=notrunc && \
 bzip2 sdcard-node.img || exit $?
 
@@ -156,8 +156,8 @@ bzip2 sdcard-node.img || exit $?
 # SD card mgmt1 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt1.img.bz2 && \
-gunzip sdcard-mgmt1.img.bz2 && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt1.img.gz && \
+gunzip sdcard-mgmt1.img.gz && \
 dd if=rootfs-mgmt1.img of=sdcard-mgmt1.img bs=512 seek=264280 conv=notrunc && \
 bzip2 sdcard-mgmt1.img || exit $?
 
@@ -165,8 +165,8 @@ bzip2 sdcard-mgmt1.img || exit $?
 # SD card mgmt2 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt2.img.bz2 && \
-gunzip sdcard-mgmt2.img.bz2 && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt2.img.gz && \
+gunzip sdcard-mgmt2.img.gz && \
 dd if=rootfs-mgmt2.img of=sdcard-mgmt2.img bs=512 seek=264280 conv=notrunc && \
 bzip2 sdcard-mgmt2.img || exit $?
 
@@ -174,8 +174,8 @@ bzip2 sdcard-mgmt2.img || exit $?
 # SD card mgmt3 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt3.img.bz2 && \
-gunzip sdcard-mgmt3.img.bz2 && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt3.img.gz && \
+gunzip sdcard-mgmt3.img.gz && \
 dd if=rootfs-mgmt3.img of=sdcard-mgmt3.img bs=512 seek=264280 conv=notrunc && \
 bzip2 sdcard-mgmt3.img || exit $?
 
