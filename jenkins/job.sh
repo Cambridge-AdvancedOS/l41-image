@@ -82,7 +82,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -d $WORKSPACE/rootfs-rescue.img $WORKSPACE/rootfs/ || exit $?
 
 #
-# Rootfs node image. 4700M
+# Rootfs node image. 5000M
 #
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
@@ -95,7 +95,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -d $WORKSPACE/rootfs-node.img $WORKSPACE/rootfs/ || exit $?
 
 #
-# Rootfs mgmt1 image. 4700M
+# Rootfs mgmt1 image. 5000M
 #
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
@@ -109,7 +109,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -d $WORKSPACE/rootfs-mgmt1.img $WORKSPACE/rootfs/ || exit $?
 
 #
-# Rootfs mgmt2 image. 4700M
+# Rootfs mgmt2 image. 5000M
 #
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
@@ -123,7 +123,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -d $WORKSPACE/rootfs-mgmt2.img $WORKSPACE/rootfs/ || exit $?
 
 #
-# Rootfs mgmt3 image. 4700M
+# Rootfs mgmt3 image. 5000M
 #
 cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -p $WORKSPACE/l41-image/image/extras/etc/master.passwd \
