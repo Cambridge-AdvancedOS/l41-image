@@ -8,7 +8,7 @@ export KERNCONF=ADVOPSYS
 export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
-rm -rf tmp *.img *img.gz kernel.rescue*
+rm -rf tmp *.img *img.gz *img.bz2 kernel.rescue*
 rm -rf rootfs
 mkdir -p obj rootfs
 
@@ -141,52 +141,52 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 #
 cp $WORKSPACE/obj/usr/local/jenkins/workspace/l41-rpi4-image/freebsd/arm64.aarch64/sys/GENERIC-MMCCAM-MDROOT/kernel $WORKSPACE/kernel.rescue && \
 sh $HEAD/sys/tools/embed_mfs.sh kernel.rescue $WORKSPACE/rootfs-rescue.img || exit $?
-gzip kernel.rescue || exit $?
+bzip2 kernel.rescue || exit $?
 
 #
 # SD card node image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-node/sdcard.img.gz $WORKSPACE/sdcard-node.img.gz && \
-gunzip sdcard-node.img.gz && \
+cp $WORKSPACE/l41-image/sdcard-node/sdcard.img.bz2 $WORKSPACE/sdcard-node.img.bz2 && \
+gunzip sdcard-node.img.bz2 && \
 dd if=rootfs-node.img of=sdcard-node.img bs=512 seek=264280 conv=notrunc && \
-gzip sdcard-node.img || exit $?
+bzip2 sdcard-node.img || exit $?
 
 #
 # SD card mgmt1 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt1.img.gz && \
-gunzip sdcard-mgmt1.img.gz && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt1.img.bz2 && \
+gunzip sdcard-mgmt1.img.bz2 && \
 dd if=rootfs-mgmt1.img of=sdcard-mgmt1.img bs=512 seek=264280 conv=notrunc && \
-gzip sdcard-mgmt1.img || exit $?
+bzip2 sdcard-mgmt1.img || exit $?
 
 #
 # SD card mgmt2 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt2.img.gz && \
-gunzip sdcard-mgmt2.img.gz && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt2.img.bz2 && \
+gunzip sdcard-mgmt2.img.bz2 && \
 dd if=rootfs-mgmt2.img of=sdcard-mgmt2.img bs=512 seek=264280 conv=notrunc && \
-gzip sdcard-mgmt2.img || exit $?
+bzip2 sdcard-mgmt2.img || exit $?
 
 #
 # SD card mgmt3 image
 #
 cd $WORKSPACE && \
-cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.gz $WORKSPACE/sdcard-mgmt3.img.gz && \
-gunzip sdcard-mgmt3.img.gz && \
+cp $WORKSPACE/l41-image/sdcard-mgmt/sdcard.img.bz2 $WORKSPACE/sdcard-mgmt3.img.bz2 && \
+gunzip sdcard-mgmt3.img.bz2 && \
 dd if=rootfs-mgmt3.img of=sdcard-mgmt3.img bs=512 seek=264280 conv=notrunc && \
-gzip sdcard-mgmt3.img || exit $?
+bzip2 sdcard-mgmt3.img || exit $?
 
 #
 # Needed for rescue procedures
 #
-gzip $WORKSPACE/rootfs-node.img
+bzip2 $WORKSPACE/rootfs-node.img
 
 #
 # Optional artifact
 #
-#gzip $WORKSPACE/rootfs-mgmt1.img
-#gzip $WORKSPACE/rootfs-mgmt2.img
-#gzip $WORKSPACE/rootfs-mgmt3.img
+#bzip2 $WORKSPACE/rootfs-mgmt1.img
+#bzip2 $WORKSPACE/rootfs-mgmt2.img
+#bzip2 $WORKSPACE/rootfs-mgmt3.img
