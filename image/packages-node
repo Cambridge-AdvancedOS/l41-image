@@ -75,7 +75,6 @@
 	py37-Jinja2: 2.11.2_1
 	py37-PyHamcrest: 2.0.2
 	py37-anyio: 2.0.2
-	py37-sniffio: 1.2.0
 	py37-appdirs: 1.4.4
 	py37-argon2-cffi: 19.1.0
 	py37-async_generator: 1.10
@@ -147,6 +146,7 @@
 	py37-service_identity: 18.1.0
 	py37-setuptools: 44.0.0
 	py37-six: 1.15.0
+	py37-sniffio: 1.2.0
 	py37-sqlite3: 3.7.9_7
 	py37-terminado: 0.8.3
 	py37-testpath: 0.4.4
