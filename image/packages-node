@@ -1,175 +1,175 @@
-	py37-python-dtrace: 0.0.11
-	pkg: 1.16.2
-        apr: 1.7.0.1.6.1_1
-        bash: 5.1.4_1
-        bash-completion: 2.11,2
-        binutils: 2.33.1_4,1
-        ca_root_nss: 3.58
-        calc: 2.12.7.2_1
-        curl: 7.74.0
-        cvsps: 2.1_2
-        db5: 5.3.28_7
-        expat: 2.2.10
-        gcc10: 10.2.0
-        gdbm: 1.19
-        gettext-runtime: 0.21
-        git: 2.30.0
-        glib: 2.66.4_1,1
-        gmp: 6.2.1
-        gnupg: 2.2.27
-        gnutls: 3.6.15
-        indexinfo: 0.3.1
-        libargon2: 20190702
-        libassuan: 2.5.4
-        libedit: 3.1.20191231,1
-        libevent: 2.1.12
-        libffi: 3.3_1
-        libgcrypt: 1.8.7
-        libgpg-error: 1.41
-        libiconv: 1.16
-        libidn2: 2.3.0_1
-        libksba: 1.5.0
-        liblz4: 1.9.3,1
-        libnghttp2: 1.42.0
-        libtasn1: 4.16.0_1
-        libunistring: 0.9.10_1
-        libxml2: 2.9.10_2
-        libzmq4: 4.3.1_1
-        metis: 5.1.0_8
-        mpc: 1.1.0_2
-        mpfr: 4.1.0
-        nettle: 3.6
-        norm: 1.5r6_1
-        npth: 1.6
-        openblas: 0.3.12,1
-        openpgm: 5.2.122_6
-        p11-kit: 0.23.22
-        p5-Authen-SASL: 2.16_1
-        p5-CGI: 4.51
-        p5-Clone: 0.45
-        p5-Digest-HMAC: 1.03_1
-        p5-Encode-Locale: 1.05
-        p5-Error: 0.17029
-        p5-GSSAPI: 0.28_1
-        p5-HTML-Parser: 3.75
-        p5-HTML-Tagset: 3.20_1
-        p5-HTTP-Date: 6.05
-        p5-HTTP-Message: 6.27
-        p5-IO-HTML: 1.001_1
-        p5-IO-Socket-INET6: 2.72_1
-        p5-IO-Socket-SSL: 2.068
-        p5-LWP-MediaTypes: 6.04
-        p5-Mozilla-CA: 20200520
-        p5-Net-SSLeay: 1.88
-        p5-Socket6: 0.29
-        p5-Term-ReadKey: 2.38_1
-        p5-TimeDate: 2.33,1
-        p5-URI: 5.05
-        p5-subversion: 1.14.0
-        pcre: 8.44
-        perl5: 5.32.0_1
-        pinentry: 1.1.0_7
-        pinentry-tty: 1.1.0
-        py37-Automat: 20.2.0
-        py37-Babel: 2.8.0
-        py37-Jinja2: 2.11.2_1
-        py37-PyHamcrest: 2.0.2
-        py37-anyio: 2.0.2
-        py37-sniffio: 1.2.0
-        py37-appdirs: 1.4.4
-        py37-argon2-cffi: 19.1.0
-        py37-async_generator: 1.10
-        py37-attrs: 20.3.0
-        py37-backcall: 0.2.0
-        py37-bcrypt: 3.2.0
-        py37-bleach: 3.1.5
-        py37-bottleneck: 1.3.2
-        py37-certifi: 2020.12.5
-        py37-cffi: 1.14.4
-        py37-chardet: 3.0.4_3
-        py37-constantly: 15.1.0
-        py37-cryptography: 2.9.2
-        py37-cython: 0.29.21
-        py37-dateutil: 2.8.1
-        py37-decorator: 4.4.2
-        py37-defusedxml: 0.6.0
-        py37-entrypoints: 0.3
-        py37-h2: 4.0.0
-        py37-hpack: 4.0.0
-        py37-hyperframe: 6.0.0
-        py37-hyperlink: 21.0.0
-        py37-idna: 2.10
-        py37-importlib-metadata: 3.3.0_1
-        py37-incremental: 17.5.0
-        py37-ipykernel5: 5.4.2
-        py37-ipython: 7.19.0_2
-        py37-ipython_genutils: 0.2.0
-        py37-jedi: 0.18.0_1
-        py37-json5: 0.9.5
-        py37-jsonschema: 3.2.0
-        py37-jupyter_client: 6.1.11
-        py37-jupyter_core: 4.7.0
-        py37-jupyterlab: 2.2.9
-        py37-jupyterlab-pygments: 0.1.2
-        py37-jupyterlab-server: 1.2.0
-        py37-markupsafe: 1.1.1_1
-        py37-mistune: 0.8.4
-        py37-nbclient: 0.5.1
-        py37-nbconvert: 6.0.7_1
-        py37-nbformat: 5.0.8
-        py37-nest-asyncio: 1.4.3
-        py37-notebook: 6.1.6
-        py37-numexpr: 2.7.2
-        py37-numpy: 1.16.6,1
-        py37-openssl: 19.1.0
-        py37-packaging: 20.8
-        py37-pandas: 0.24.2_1,1
-        py37-pandocfilters: 1.4.3
-        py37-parso: 0.8.1
-        py37-pexpect: 4.8.0
-        py37-pickleshare: 0.7.5
-        py37-priority: 1.3.0
-        py37-prometheus-client: 0.9.0
-        py37-prompt-toolkit: 3.0.10
-        py37-ptyprocess: 0.6.0
-        py37-pyasn1: 0.4.7
-        py37-pyasn1-modules: 0.2.7
-        py37-pycparser: 2.20
-        py37-pygments: 2.7.2
-        py37-pyparsing: 2.4.7
-        py37-pyrsistent: 0.14.11_1
-        py37-pyserial: 3.4_1
-        py37-pysocks: 1.7.1
-        py37-pytz: 2020.5,1
-        py37-pyzmq: 19.0.2
-        py37-requests: 2.22.0_2
-        py37-send2trash: 1.5.0_1
-        py37-service_identity: 18.1.0
-        py37-setuptools: 44.0.0
-        py37-six: 1.15.0
-        py37-sqlite3: 3.7.9_7
-        py37-terminado: 0.8.3
-        py37-testpath: 0.4.4
-        py37-tornado: 5.1.1
-        py37-traitlets: 5.0.5
-        py37-twisted: 20.3.0_1
-        py37-typing-extensions: 3.7.4.3
-        py37-urllib3: 1.25.11,1
-        py37-wcwidth: 0.1.8
-        py37-webencodings: 0.5.1
-        py37-zipp: 3.4.0
-        py37-zope.interface: 4.6.0
-        python: 3.7_3,2
-        python3: 3_3
-        python37: 3.7.9_1
-        readline: 8.0.4_1
-        serf: 1.3.9_5
-        sqlite3: 3.34.0,1
-        subversion: 1.14.0
-        sudo: 1.9.5p1
-        suitesparse: 5.8.1
-        tbb: 2020.3_1
-        tmux: 3.1c
-        tpm-emulator: 0.7.4_2
-        trousers: 0.3.14_3
-        utf8proc: 2.6.1
+py37-python-dtrace: 0.0.11
+pkg: 1.16.2
+apr: 1.7.0.1.6.1_1
+bash: 5.1.4_1
+bash-completion: 2.11,2
+binutils: 2.33.1_4,1
+ca_root_nss: 3.58
+calc: 2.12.7.2_1
+curl: 7.74.0
+cvsps: 2.1_2
+db5: 5.3.28_7
+expat: 2.2.10
+gcc10: 10.2.0
+gdbm: 1.19
+gettext-runtime: 0.21
+git: 2.30.0
+glib: 2.66.4_1,1
+gmp: 6.2.1
+gnupg: 2.2.27
+gnutls: 3.6.15
+indexinfo: 0.3.1
+libargon2: 20190702
+libassuan: 2.5.4
+libedit: 3.1.20191231,1
+libevent: 2.1.12
+libffi: 3.3_1
+libgcrypt: 1.8.7
+libgpg-error: 1.41
+libiconv: 1.16
+libidn2: 2.3.0_1
+libksba: 1.5.0
+liblz4: 1.9.3,1
+libnghttp2: 1.42.0
+libtasn1: 4.16.0_1
+libunistring: 0.9.10_1
+libxml2: 2.9.10_2
+libzmq4: 4.3.1_1
+metis: 5.1.0_8
+mpc: 1.1.0_2
+mpfr: 4.1.0
+nettle: 3.6
+norm: 1.5r6_1
+npth: 1.6
+openblas: 0.3.12,1
+openpgm: 5.2.122_6
+p11-kit: 0.23.22
+p5-Authen-SASL: 2.16_1
+p5-CGI: 4.51
+p5-Clone: 0.45
+p5-Digest-HMAC: 1.03_1
+p5-Encode-Locale: 1.05
+p5-Error: 0.17029
+p5-GSSAPI: 0.28_1
+p5-HTML-Parser: 3.75
+p5-HTML-Tagset: 3.20_1
+p5-HTTP-Date: 6.05
+p5-HTTP-Message: 6.27
+p5-IO-HTML: 1.001_1
+p5-IO-Socket-INET6: 2.72_1
+p5-IO-Socket-SSL: 2.068
+p5-LWP-MediaTypes: 6.04
+p5-Mozilla-CA: 20200520
+p5-Net-SSLeay: 1.88
+p5-Socket6: 0.29
+p5-Term-ReadKey: 2.38_1
+p5-TimeDate: 2.33,1
+p5-URI: 5.05
+p5-subversion: 1.14.0
+pcre: 8.44
+perl5: 5.32.0_1
+pinentry: 1.1.0_7
+pinentry-tty: 1.1.0
+py37-Automat: 20.2.0
+py37-Babel: 2.8.0
+py37-Jinja2: 2.11.2_1
+py37-PyHamcrest: 2.0.2
+py37-anyio: 2.0.2
+py37-sniffio: 1.2.0
+py37-appdirs: 1.4.4
+py37-argon2-cffi: 19.1.0
+py37-async_generator: 1.10
+py37-attrs: 20.3.0
+py37-backcall: 0.2.0
+py37-bcrypt: 3.2.0
+py37-bleach: 3.1.5
+py37-bottleneck: 1.3.2
+py37-certifi: 2020.12.5
+py37-cffi: 1.14.4
+py37-chardet: 3.0.4_3
+py37-constantly: 15.1.0
+py37-cryptography: 2.9.2
+py37-cython: 0.29.21
+py37-dateutil: 2.8.1
+py37-decorator: 4.4.2
+py37-defusedxml: 0.6.0
+py37-entrypoints: 0.3
+py37-h2: 4.0.0
+py37-hpack: 4.0.0
+py37-hyperframe: 6.0.0
+py37-hyperlink: 21.0.0
+py37-idna: 2.10
+py37-importlib-metadata: 3.3.0_1
+py37-incremental: 17.5.0
+py37-ipykernel5: 5.4.2
+py37-ipython: 7.19.0_2
+py37-ipython_genutils: 0.2.0
+py37-jedi: 0.18.0_1
+py37-json5: 0.9.5
+py37-jsonschema: 3.2.0
+py37-jupyter_client: 6.1.11
+py37-jupyter_core: 4.7.0
+py37-jupyterlab: 2.2.9
+py37-jupyterlab-pygments: 0.1.2
+py37-jupyterlab-server: 1.2.0
+py37-markupsafe: 1.1.1_1
+py37-mistune: 0.8.4
+py37-nbclient: 0.5.1
+py37-nbconvert: 6.0.7_1
+py37-nbformat: 5.0.8
+py37-nest-asyncio: 1.4.3
+py37-notebook: 6.1.6
+py37-numexpr: 2.7.2
+py37-numpy: 1.16.6,1
+py37-openssl: 19.1.0
+py37-packaging: 20.8
+py37-pandas: 0.24.2_1,1
+py37-pandocfilters: 1.4.3
+py37-parso: 0.8.1
+py37-pexpect: 4.8.0
+py37-pickleshare: 0.7.5
+py37-priority: 1.3.0
+py37-prometheus-client: 0.9.0
+py37-prompt-toolkit: 3.0.10
+py37-ptyprocess: 0.6.0
+py37-pyasn1: 0.4.7
+py37-pyasn1-modules: 0.2.7
+py37-pycparser: 2.20
+py37-pygments: 2.7.2
+py37-pyparsing: 2.4.7
+py37-pyrsistent: 0.14.11_1
+py37-pyserial: 3.4_1
+py37-pysocks: 1.7.1
+py37-pytz: 2020.5,1
+py37-pyzmq: 19.0.2
+py37-requests: 2.22.0_2
+py37-send2trash: 1.5.0_1
+py37-service_identity: 18.1.0
+py37-setuptools: 44.0.0
+py37-six: 1.15.0
+py37-sqlite3: 3.7.9_7
+py37-terminado: 0.8.3
+py37-testpath: 0.4.4
+py37-tornado: 5.1.1
+py37-traitlets: 5.0.5
+py37-twisted: 20.3.0_1
+py37-typing-extensions: 3.7.4.3
+py37-urllib3: 1.25.11,1
+py37-wcwidth: 0.1.8
+py37-webencodings: 0.5.1
+py37-zipp: 3.4.0
+py37-zope.interface: 4.6.0
+python: 3.7_3,2
+python3: 3_3
+python37: 3.7.9_1
+readline: 8.0.4_1
+serf: 1.3.9_5
+sqlite3: 3.34.0,1
+subversion: 1.14.0
+sudo: 1.9.5p1
+suitesparse: 5.8.1
+tbb: 2020.3_1
+tmux: 3.1c
+tpm-emulator: 0.7.4_2
+trousers: 0.3.14_3
+utf8proc: 2.6.1
