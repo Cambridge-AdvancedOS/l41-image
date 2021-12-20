@@ -3,9 +3,7 @@ from commands import getstatusoutput
 import os
 import sys
 
-TMP = './tmp'
 FILES = []
-DIRS = []
 
 PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
 
@@ -21,7 +19,7 @@ for line in f:
 	print(p)
 	PACKAGES.append(p)
 
-for dir in [TMP, DISTFILES]:
+for dir in [DISTFILES]:
 	if not os.path.exists(dir):
 		os.mkdir(dir)
 
@@ -36,62 +34,13 @@ for pkg in PACKAGES:
 		print("Failed to download %s" % p)
 		sys.exit(1)
 
-for pkg in PACKAGES:
-	print 'Extracting package %s' % pkg
-	status, output = getstatusoutput('tar -C %s -zxf %s/%s' % \
-				(TMP, DISTFILES, pkg))
-	if status != 0:
-		sys.exit(2)
-
-	'''
-	print 'Adding package %s' % pkg
-	l = 'pkg -o INSTALL_AS_USER=1 -o METALOG=plop -r %s add -IM %s/%s' % \
-		(ROOTFS, DISTFILES, pkg)
-	status, output = getstatusoutput(l)
-	if status != 0:
-		print(output)
-		sys.exit(3)
-	'''
-
-	f = open(os.path.join(TMP,"+MANIFEST"),"r")
-	m = f.read()
-	f.close()
-
-	d = eval(m)
-	files = d['files']
-
-	for file in files:
-		file = file.lstrip('/')
-		link = False
-		p = os.path.join(TMP, file)
-		if os.path.islink(p):
-			link = os.readlink(p)
-		mode = os.lstat(p).st_mode
-		FILES.append((file,link, mode))
-
-for w in os.walk(os.path.join(TMP, "usr")):
-	DIRS.append(w[0].replace(TMP, ""))
-
-f = open(os.path.join(TMP, mtree_file),"w")
+f = open(os.path.join(mtree_file), "w")
 f.write("#mtree 2.0\n")
+f.write('./%s type=dir uname=root gname=wheel mode=0755\n' % \
+	os.path.basename(DISTFILES))
 
-for dir in DIRS:
-	f.write('.%s type=dir uname=root gname=wheel mode=0755\n' % \
-			dir.replace(" ","\ "))
-
-for file, link, mode in FILES:
-	mode = oct(mode & 0xfff)
-	if file == 'usr/local/bin/sudo':
-		mode = '04555'
-	# not sure how to use mtree with space in the filename
-	if ' ' in file:
-		continue
-	if link:
-		f.write('./%s type=link uname=root'
-			' gname=wheel mode=%s link=%s\n' % \
-			(file.replace(" ","\s"), mode, link))
-	else:
-		f.write('./%s type=file uname=root gname=wheel mode=%s\n' % \
-			(file.replace(" ","\s"), mode))
+for pkg in PACKAGES:
+	p = os.path.join(os.path.join(os.path.basename(DISTFILES), pkg))
+	f.write('./%s type=file uname=root gname=wheel mode=0644\n' % p)
 
 f.close()

@@ -8,7 +8,7 @@ export KERNCONF=ADVOPSYS
 export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
-rm -rf tmp *.img *img.gz *img.bz2 kernel.rescue*
+rm -rf *.mtree tmp *.img *img.gz *img.bz2 kernel.rescue*
 rm -rf rootfs
 mkdir -p obj rootfs
 
@@ -90,7 +90,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-node/extras.mtree \
-  -e $WORKSPACE/tmp/node.mtree \
+  -e $WORKSPACE/node.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-node.img $WORKSPACE/rootfs/ || exit $?
 
@@ -104,7 +104,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt1/extras.mtree \
-  -e $WORKSPACE/tmp/mgmt.mtree \
+  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt1.img $WORKSPACE/rootfs/ || exit $?
 
@@ -118,7 +118,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt2/extras.mtree \
-  -e $WORKSPACE/tmp/mgmt.mtree \
+  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt2.img $WORKSPACE/rootfs/ || exit $?
 
@@ -132,7 +132,7 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt3/extras.mtree \
-  -e $WORKSPACE/tmp/mgmt.mtree \
+  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt3.img $WORKSPACE/rootfs/ || exit $?
 
