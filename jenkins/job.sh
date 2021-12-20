@@ -1,6 +1,11 @@
 set -xe
 uname -a
 
+skip_build=0
+if [ "$1" = "skip" ]; then
+	skip_build=1
+fi
+
 export TARGET=arm64
 export MAKEOBJDIRPREFIX=$WORKSPACE/obj/
 export HEAD=$WORKSPACE/freebsd
@@ -45,11 +50,13 @@ cp $WORKSPACE/l41-image/rescue/GENERIC-MMCCAM-MDROOT $HEAD/sys/arm64/conf/
 #
 # Build FreeBSD
 #
-rm -rf obj
-cd $HEAD && \
-make -j${NCPU} kernel-toolchain && \
-make -j${NCPU} buildkernel && \
-make -j${NCPU} buildworld || exit $?
+if [ $skip_build -eq 0 ]; then
+	rm -rf obj
+	cd $HEAD && \
+	make -j${NCPU} kernel-toolchain && \
+	make -j${NCPU} buildkernel && \
+	make -j${NCPU} buildworld || exit $?
+fi
 
 #
 # Build kernel only
@@ -59,7 +66,9 @@ make -j${NCPU} buildworld || exit $?
 #
 # Build rescue kernel
 #
-cd $HEAD && make -j${NCPU} KERNCONF=GENERIC-MMCCAM-MDROOT buildkernel || exit $?
+if [ $skip_build -eq 0 ]; then
+	cd $HEAD && make -j${NCPU} KERNCONF=GENERIC-MMCCAM-MDROOT buildkernel || exit $?
+fi
 
 #
 # Install FreeBSD
