@@ -1,3 +1,21 @@
+How to boot a rescue or a random kernel
+
+0. Put your kernel to /tftpboot/boot-xxx/kernel
+
+1. For a rescue kernel run this in u-boot. This will set rootfs to md0 (mdroot)
+ # run bootcmd_rescue
+
+2. Once loader.efi loaded, run
+ # unload kernel
+ # load ./boot-rescue/kernel.rescue
+ # (load any modules needed)
+ # boot
+
+2. In the booted FreeBSD:
+ # dhclient genet0
+
+-----
+
 How to rescue a node.
 
 On the node we are rescuing:
