@@ -4,6 +4,7 @@ FILENAME=/etc/l41_packages_installed
 DISTFILES="/distfiles"
 PKG="/usr/local/sbin/pkg-static"
 
+export PATH="$PATH:/usr/local/bin/"
 export ASSUME_ALWAYS_YES=yes
 
 if ! test -f "$PKG"; then
