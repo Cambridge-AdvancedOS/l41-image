@@ -1,4 +1,5 @@
 #!/usr/local/bin/python
+from datetime import datetime
 import subprocess
 import os, sys
 import time
@@ -31,7 +32,7 @@ def daemonize():
 	main()
 
 def main():
-	print("Starting. Checking files...")
+	print("%s: Starting. Checking files..." % datetime.now())
 	files = os.listdir("/distfiles")
 	for file in files:
 		print("Checking if %s installed" % file)
@@ -48,8 +49,11 @@ def main():
 				sys.exit(1)
 
 	f = open(filename, "w")
-	f.write("error %d" % error)
+	f.write("Packages install complete with error %d, current time %s" % \
+	    (error, datetime.now()))
 	f.close()
+
+	print("%s: installation complete" % datetime.now())
 
 if __name__ == '__main__':
 	if os.path.exists(filename):
