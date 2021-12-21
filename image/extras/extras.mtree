@@ -2,10 +2,14 @@
 ./firstboot type=file uname=root gname=wheel mode=644
 ./home type=dir uname=root gname=wheel mode=755
 ./home/guest type=dir uid=1001 gid=31 mode=755
+./usr/local/bin type=dir uname=root gname=wheel mode=0755
+./usr/local/bin/l41_packages.py type=file uname=root gname=wheel mode=755
 ./usr/local/etc type=dir uname=root gname=wheel mode=0755
 ./usr/local/etc/sudoers type=file uname=root gname=wheel mode=440
 ./usr/local/etc/pkg type=dir uname=root gname=wheel mode=0755
 ./usr/local/etc/pkg/repos type=dir uname=root gname=wheel mode=0755
+./usr/local/etc/rc.d type=dir uname=root gname=wheel mode=0755
+./usr/local/etc/rc.d/l41_packages type=file uname=root gname=wheel mode=755
 ./etc/freebsd_git_hash type=file uname=root gname=wheel mode=644
 ./etc/shells type=file uname=root gname=wheel mode=644
 ./etc/ssh type=dir uname=root gname=wheel mode=0755

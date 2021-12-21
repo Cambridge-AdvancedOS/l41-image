@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# PROVIDE: l41_packages
+# REQUIRE: NETWORKING DAEMON FILESYSTEMS growfs
+# KEYWORD: shutdown
+#
+# Created by: Ruslan Bukin <br@bsdpad.com>
+#
+# Add the following line to /etc/rc.conf[.local] to enable l41_packages:
+#
+# l41_packages_enable="YES"
+#
+
+. /etc/rc.subr
+
+l41_packages_enable=${l41_packages_enable:-"NO"}
+l41_packages_user=root
+l41_packages_group=wheel
+
+export PYTHON_EGG_CACHE="/tmp/"
+
+name=l41_packages
+rcvar=`set_rcvar`
+pidfile="/var/run/${name}.pid"
+command=/usr/local/bin/l41_packages.py
+command_interpreter=/usr/local/bin/python
+
+load_rc_config ${name}
+run_rc_command "$1"
