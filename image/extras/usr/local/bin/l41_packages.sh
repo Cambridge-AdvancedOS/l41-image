@@ -2,8 +2,17 @@
 
 FILENAME=/etc/l41_packages_installed
 DISTFILES="/distfiles"
+PKG="/usr/local/sbin/pkg-static"
 
 export ASSUME_ALWAYS_YES=yes
+
+if ! test -f "$PKG"; then
+	PKG="/usr/local/sbin/pkg-static.pkgsave"
+fi
+
+if ! test -f "$PKG"; then
+	exit 3
+fi
 
 if test -f "$FILENAME"; then
 	exit 0
@@ -13,12 +22,6 @@ if ! test -d "$DISTFILES"; then
 	exit 0
 fi
 
-# Install pkg first
-pkg info pkg || pkg
-
-# Now install all the files
-for file in $(ls $DISTFILES); do
-	pkg info -q $file || pkg install -y /distfiles/$file || exit 1
-done
+/usr/local/sbin/pkg-static install -y $(ls /distfiles/*txz) || exit 1
 
 touch $FILENAME
