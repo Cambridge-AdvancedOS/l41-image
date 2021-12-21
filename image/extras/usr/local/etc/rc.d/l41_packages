@@ -21,9 +21,8 @@ export PYTHON_EGG_CACHE="/tmp/"
 
 name=l41_packages
 rcvar=`set_rcvar`
-pidfile="/var/run/${name}.pid"
-command=/usr/local/bin/l41_packages.py
-command_interpreter=/usr/local/bin/python
+command=/usr/local/bin/l41_packages.sh
+command_interpreter=/bin/sh
 
 load_rc_config ${name}
 run_rc_command "$1"
