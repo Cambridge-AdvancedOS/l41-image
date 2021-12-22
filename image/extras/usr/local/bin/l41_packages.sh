@@ -7,14 +7,6 @@ PKG="/usr/local/sbin/pkg-static"
 export PATH="$PATH:/usr/local/bin/"
 export ASSUME_ALWAYS_YES=yes
 
-if ! test -f "$PKG"; then
-	PKG="/usr/local/sbin/pkg-static.pkgsave"
-fi
-
-if ! test -f "$PKG"; then
-	exit 3
-fi
-
 if test -f "$FILENAME"; then
 	exit 0
 fi
@@ -23,6 +15,12 @@ if ! test -d "$DISTFILES"; then
 	exit 0
 fi
 
-/usr/local/sbin/pkg-static install -y $(ls /distfiles/*txz) || exit 1
+# Untar pkg first
+if ! test -f "$PKG"; then
+	tar -C / -zxf /distfiles/pkg-*.txz $PKG || exit 1
+fi
+
+# Now install packages
+/usr/local/sbin/pkg-static install -y $(ls /distfiles/*txz) || exit 2
 
 touch $FILENAME
