@@ -21,6 +21,8 @@ if ! test -f "$PKG"; then
 fi
 
 # Now install packages
-/usr/local/sbin/pkg-static install -y $(ls /distfiles/*txz) || exit 2
+for file in $(ls /distfiles/); do
+	$PKG install -M /distfiles/$file
+done
 
 touch $FILENAME
