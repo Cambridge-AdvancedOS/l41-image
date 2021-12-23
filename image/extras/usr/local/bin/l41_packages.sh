@@ -22,7 +22,8 @@ fi
 
 # Now install packages
 for file in $(ls /distfiles/); do
-	$PKG install -M /distfiles/$file
+	echo "Installing $file"
+	$PKG install -qM /distfiles/$file
 done
 
 touch $FILENAME
