@@ -116,6 +116,7 @@ sbin/dumpfs
 sbin/fsck
 sbin/fsck_ufs
 sbin/fsdb
+sbin/gpart
 sbin/ifconfig
 sbin/init
 sbin/kldload
