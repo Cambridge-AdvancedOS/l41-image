@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# PROVIDE: l41_growfs
+# REQUIRE: NETWORKING DAEMON FILESYSTEMS
+# KEYWORD: shutdown
+#
+# Created by: Ruslan Bukin <br@bsdpad.com>
+#
+# Add the following line to /etc/rc.conf[.local] to enable l41_growfs:
+#
+# l41_growfs_enable="YES"
+#
+
+. /etc/rc.subr
+
+l41_growfs_enable=${l41_growfs_enable:-"NO"}
+l41_growfs_user=root
+l41_growfs_group=wheel
+
+export PYTHON_EGG_CACHE="/tmp/"
+
+name=l41_growfs
+rcvar=`set_rcvar`
+command=/usr/local/bin/l41_growfs.sh
+command_interpreter=/bin/sh
+
+load_rc_config ${name}
+run_rc_command "$1"
