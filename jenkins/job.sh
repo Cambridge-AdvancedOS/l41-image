@@ -13,7 +13,7 @@ export KERNCONF=ADVOPSYS
 export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
-rm -rf *.mtree tmp *.img *img.gz *img.bz2 kernel.rescue*
+rm -rf *.mtree tmp *.img *.bz2 *.tar
 rm -rf rootfs
 mkdir -p obj rootfs
 
@@ -192,6 +192,14 @@ bzip2 sdcard-mgmt3.img || exit $?
 # Needed for rescue procedures
 #
 bzip2 $WORKSPACE/rootfs-node.img
+
+#
+# /tftpboot directory
+#
+cd $WORKSPACE/rootfs && \
+tar -cvf $WORKSPACE/tftpboot.tar boot && \
+cd $WORKSPACE && \
+bzip2 tftpboot.tar
 
 #
 # Optional artifact
