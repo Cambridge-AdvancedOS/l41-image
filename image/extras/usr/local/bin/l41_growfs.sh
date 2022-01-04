@@ -11,8 +11,6 @@ fi
 #
 /sbin/gpart resize -i 2 sdda0 || exit 1
 
-/sbin/sysctl kern.geom.debugflags=16
-
 #
 # Resize the first BSD label, which holds FreeBSD rootfs
 #
@@ -22,8 +20,6 @@ fi
 # Add the swap BSD label
 #
 /sbin/gpart add -t freebsd-swap sdda0s2 || exit 3
-
-/sbin/sysctl kern.geom.debugflags=0
 
 #
 # Now grow rootfs BSD label
