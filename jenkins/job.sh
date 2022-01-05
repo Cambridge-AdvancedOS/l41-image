@@ -150,7 +150,17 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
 #
 cp $WORKSPACE/obj/usr/local/jenkins/workspace/l41-rpi4-image/freebsd/arm64.aarch64/sys/GENERIC-MMCCAM-MDROOT/kernel $WORKSPACE/kernel.rescue && \
 sh $HEAD/sys/tools/embed_mfs.sh kernel.rescue $WORKSPACE/rootfs-rescue.img || exit $?
-bzip2 kernel.rescue || exit $?
+
+#
+# /tftpboot directory
+#
+cd $WORKSPACE/ && \
+mkdir -p tftpboot && \
+cp -R rootfs/boot tftpboot/ && \
+cp -R rootfs/boot tftpboot/boot-rescue && \
+mv -f kernel.rescue $WORKSPACE/tftpboot/boot-rescue/kernel/kernel &&
+tar -cvf tftpboot.tar tftpboot && \
+bzip2 tftpboot.tar
 
 #
 # SD card node image
@@ -192,14 +202,6 @@ bzip2 sdcard-mgmt3.img || exit $?
 # Needed for rescue procedures
 #
 bzip2 $WORKSPACE/rootfs-node.img
-
-#
-# /tftpboot directory
-#
-cd $WORKSPACE/rootfs && \
-tar -cvf $WORKSPACE/tftpboot.tar boot && \
-cd $WORKSPACE && \
-bzip2 tftpboot.tar
 
 #
 # Optional artifact
