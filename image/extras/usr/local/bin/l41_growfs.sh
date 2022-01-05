@@ -22,6 +22,11 @@ if ! test -c "$SWAP"; then
 	# Add the swap BSD label
 	#
 	/sbin/gpart add -t freebsd-swap sdda0s2 || exit 3
+
+	#
+	# Save changes.
+	#
+	/sbin/gpart commit sdda0s2
 fi
 
 #
