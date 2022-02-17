@@ -14,7 +14,7 @@ export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
 rm -rf *.mtree tmp *.img *.bz2 *.tar
-rm -rf rootfs
+rm -rf rootfs tftpboot || exit $?
 mkdir -p obj rootfs
 
 #
@@ -160,7 +160,7 @@ cp -R rootfs/boot tftpboot/ && \
 cp -R rootfs/boot tftpboot/boot-rescue && \
 mv -f kernel.rescue $WORKSPACE/tftpboot/boot-rescue/kernel/kernel &&
 tar -cvf tftpboot.tar tftpboot && \
-bzip2 tftpboot.tar
+bzip2 tftpboot.tar || exit $?
 
 #
 # SD card node image
