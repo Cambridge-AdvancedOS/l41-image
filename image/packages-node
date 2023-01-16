@@ -1,74 +1,74 @@
-	apr: 1.7.0.1.6.1_2
-	bash-completion: 2.11_2,2
-	bash: 5.2.15
-	binutils: 2.39,1
-	ca_root_nss: 3.86
-	calc: 2.14.1.2
-	curl: 7.87.0
+	apr: 1.7.0.1.6.1_1
+	bash-completion: 2.11_1,2
+	bash: 5.1.12
+	binutils: 2.37_2,1
+	ca_root_nss: 3.71
+	calc: 2.14.0.12
+	curl: 7.80.0
 	cvsps: 2.1_2
-	db5: 5.3.28_9
-	expat: 2.5.0
-	gcc10: 10.4.0
-	gdbm: 1.23
-	gettext-runtime: 0.21.1
-	git: 2.39.0
-	glib: 2.74.4,2
+	db5: 5.3.28_7
+	expat: 2.4.1
+	gcc10: 10.3.0
+	gdbm: 1.22
+	gettext-runtime: 0.21
+	git: 2.34.1
+	glib: 2.70.2,2
 	gmp: 6.2.1
-	gnupg: 2.3.8
-	gnutls: 3.7.8_1
+	gnupg: 2.3.3_2
+	gnutls: 3.6.16
 	indexinfo: 0.3.1
 	libargon2: 20190702
 	libassuan: 2.5.5
-	libedit: 3.1.20221030,1
+	libedit: 3.1.20210216,1
 	libevent: 2.1.12
-	libffi: 3.4.4
-	libgcrypt: 1.9.4_1
-	libgpg-error: 1.46
-	libiconv: 1.17
-	libidn2: 2.3.4
-	libksba: 1.6.2
-	liblz4: 1.9.4,1
-	libnghttp2: 1.48.0
-	libtasn1: 4.19.0
-	libunistring: 1.1
-	libxml2: 2.10.3_1
+	libffi: 3.3_1
+	libgcrypt: 1.9.4
+	libgpg-error: 1.43
+	libiconv: 1.16
+	libidn2: 2.3.2
+	libksba: 1.6.0
+	liblz4: 1.9.3,1
+	libnghttp2: 1.46.0
+	libtasn1: 4.18.0
+	libunistring: 0.9.10_1
+	libxml2: 2.9.12
 	libzmq4: 4.3.4
 	metis: 5.1.0_9
 	mpc: 1.2.1
-	mpfr: 4.1.1,1
-	nettle: 3.8.1
-	norm: 1.5r6_2
+	mpfr: 4.1.0_1
+	nettle: 3.7.3
+	norm: 1.5r6_1
 	npth: 1.6
-	openblas: 0.3.20,1
+	openblas: 0.3.18,1
 	openpgm: 5.2.122_6
-	p11-kit: 0.24.1_1
+	p11-kit: 0.24.0
 	p5-Authen-SASL: 2.16_1
-	p5-CGI: 4.54
-	p5-Clone: 0.46
+	p5-CGI: 4.53
+	p5-Clone: 0.45
 	p5-Digest-HMAC: 1.04
 	p5-Encode-Locale: 1.05
 	p5-Error: 0.17029
-	p5-GSSAPI: 0.28_2
-	p5-HTML-Parser: 3.80
+	p5-GSSAPI: 0.28_1
+	p5-HTML-Parser: 3.76_1
 	p5-HTML-Tagset: 3.20_1
 	p5-HTTP-Date: 6.05
-	p5-HTTP-Message: 6.44
+	p5-HTTP-Message: 6.35
 	p5-IO-HTML: 1.004
 	p5-IO-Socket-INET6: 2.72_1
-	p5-IO-Socket-SSL: 2.077
+	p5-IO-Socket-SSL: 2.072
 	p5-LWP-MediaTypes: 6.04
-	p5-Mozilla-CA: 20221114
-	p5-Net-SSLeay: 1.92
+	p5-Mozilla-CA: 20211001
+	p5-Net-SSLeay: 1.90
 	p5-Socket6: 0.29
-	p5-subversion: 1.14.2
+	p5-subversion: 1.14.1
 	p5-Term-ReadKey: 2.38_1
 	p5-TimeDate: 2.33,1
-	p5-URI: 5.17
-	pcre: 8.45_3
-	perl5: 5.32.1_3
-	pinentry-tty: 1.2.1
-	pinentry: 1.2.1
-	pkg: 1.19.0
+	p5-URI: 5.10
+	pcre: 8.45
+	perl5: 5.32.1_1
+	pinentry-tty: 1.1.1
+	pinentry: 1.1.1
+	pkg: 1.17.5
 	py37-anyio: 2.0.2_1
 	py37-appdirs: 1.4.4
 	py37-argon2-cffi: 19.1.0
@@ -86,7 +86,7 @@
 	py37-constantly: 15.1.0
 	py37-cryptography: 2.9.2
 	py37-cython: 0.29.21
-	py37-cython: 0.29.32
+	py37-cython: 0.29.24
 	py37-dateutil: 2.8.1
 	py37-decorator: 4.4.2
 	py37-defusedxml: 0.6.0
@@ -98,7 +98,7 @@
 	py37-idna: 2.10
 	py37-importlib-metadata: 3.3.0_1
 	py37-incremental: 17.5.0
- 	py37-ipykernel5: 5.4.3
+	py37-ipykernel5: 5.4.2
 	py37-ipython_genutils: 0.2.0
 	py37-ipython: 7.19.0_2
 	py37-jedi: 0.18.0_1
@@ -108,16 +108,17 @@
 	py37-jupyter_client: 6.1.11
 	py37-jupyter_core: 4.7.0
 	py37-jupyterlab-pygments: 0.1.2
- 	py37-jupyterlab-server: 2.1.1
- 	py37-jupyterlab: 3.0.2
+	py37-jupyterlab-server: 1.2.0
+	py37-jupyterlab: 2.2.9
 	py37-markupsafe: 1.1.1_1
 	py37-mistune: 0.8.4
 	py37-nbclient: 0.5.1
 	py37-nbconvert: 6.0.7_1
- 	py37-nbformat: 5.1.2
- 	py37-nest-asyncio: 1.5.0
-	py37-notebook: 6.2.0
+	py37-nbformat: 5.0.8
+	py37-nest-asyncio: 1.4.3
+	py37-notebook: 6.1.6
 	py37-numexpr: 2.7.2
+	py37-numpy: 1.20.3,1
 	py37-openssl: 19.1.0
 	py37-packaging: 20.8
 	py37-pandas: 0.24.2_1,1
@@ -144,13 +145,13 @@
 	py37-requests: 2.22.0_2
 	py37-send2trash: 1.5.0_1
 	py37-service_identity: 18.1.0
-	py37-setuptools: 63.1.0
+	py37-setuptools: 57.0.0
 	py37-six: 1.15.0
 	py37-sniffio: 1.2.0
-	py37-sqlite3: 3.7.16_7
+	py37-sqlite3: 3.7.12_7
 	py37-terminado: 0.8.3
 	py37-testpath: 0.4.4
- 	py37-tornado: 6.1
+	py37-tornado: 5.1.1
 	py37-traitlets: 5.0.5
 	py37-twisted: 20.3.0_1
 	py37-typing-extensions: 3.7.4.3
@@ -159,17 +160,17 @@
 	py37-webencodings: 0.5.1
 	py37-zipp: 3.4.0
 	py37-zope.interface: 4.6.0
-	python: 3.9_3,2
+	python: 3.8_3,2
 	python3: 3_3
-	python37: 3.7.16
-	readline: 8.2.0
+	python37: 3.7.12_1
+	readline: 8.1.1
 	serf: 1.3.9_6
-	sqlite3: 3.40.1,1
-	subversion: 1.14.2_2
-	sudo: 1.9.12p1
-	suitesparse: 6.0.3
-	tbb: 2020.3_4
-	tmux: 3.3a
+	sqlite3: 3.35.5_4,1
+	subversion: 1.14.1
+	sudo: 1.9.8p2
+	suitesparse: 5.10.1
+	tbb: 2020.3_3
+	tmux: 3.2a
 	tpm-emulator: 0.7.4_2
-	trousers: 0.3.14_4
-	utf8proc: 2.8.0
+	trousers: 0.3.14_3
+	utf8proc: 2.6.1_1
