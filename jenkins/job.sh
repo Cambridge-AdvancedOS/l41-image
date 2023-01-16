@@ -27,8 +27,8 @@ cp $WORKSPACE/l41-image/image/distfiles/* $WORKSPACE/distfiles/
 #
 # Create packages manifests
 #
-python2.7 $WORKSPACE/l41-image/image/packages.py $WORKSPACE/l41-image/image/packages-node node.mtree $WORKSPACE/distfiles || exit $?
-python2.7 $WORKSPACE/l41-image/image/packages.py $WORKSPACE/l41-image/image/packages-mgmt mgmt.mtree $WORKSPACE/distfiles || exit $?
+# python2.7 $WORKSPACE/l41-image/image/packages.py $WORKSPACE/l41-image/image/packages-node node.mtree $WORKSPACE/distfiles || exit $?
+# python2.7 $WORKSPACE/l41-image/image/packages.py $WORKSPACE/l41-image/image/packages-mgmt mgmt.mtree $WORKSPACE/distfiles || exit $?
 
 #
 # Create kernel source manifest
@@ -99,7 +99,6 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -s 5242880000 -F 10000 \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-node/extras.mtree \
-  -e $WORKSPACE/node.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-node.img $WORKSPACE/rootfs/ || exit $?
 
@@ -113,7 +112,6 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt1/extras.mtree \
-  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt1.img $WORKSPACE/rootfs/ || exit $?
 
@@ -127,7 +125,6 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt2/extras.mtree \
-  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt2.img $WORKSPACE/rootfs/ || exit $?
 
@@ -141,7 +138,6 @@ cd $WORKSPACE && sh $WORKSPACE/l41-image/image/makeroot.sh \
   -e $WORKSPACE/l41-image/image/extras/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt/extras.mtree \
   -e $WORKSPACE/l41-image/image/extras-mgmt3/extras.mtree \
-  -e $WORKSPACE/mgmt.mtree \
   -e $HEAD/sys/files.mtree \
   -d $WORKSPACE/rootfs-mgmt3.img $WORKSPACE/rootfs/ || exit $?
 
