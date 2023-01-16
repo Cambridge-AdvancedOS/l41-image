@@ -5,7 +5,7 @@ import sys
 
 FILES = []
 
-PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/latest/All/'
+PATH = 'http://pkg.freebsd.org/FreeBSD:13:aarch64/release_1/All/'
 
 packages_file = sys.argv[1]
 mtree_file = sys.argv[2]
