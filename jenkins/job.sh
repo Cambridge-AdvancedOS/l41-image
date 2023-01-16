@@ -14,8 +14,8 @@ export NCPU=`sysctl -n hw.ncpu`
 #export ASSUME_ALWAYS_YES=yes
 
 rm -rf *.mtree tmp *.img *.bz2 *.tar
-rm -rf rootfs tftpboot || exit $?
-mkdir -p obj rootfs
+rm -rf rootfs tftpboot tmp || exit $?
+mkdir -p obj rootfs tmp
 
 #
 # Local distfiles
@@ -74,9 +74,9 @@ fi
 # Install FreeBSD
 #
 cd $HEAD && \
-make -DNO_ROOT -DWITHOUT_TESTS DESTDIR=$WORKSPACE/rootfs installworld && \
-make -DNO_ROOT -DWITHOUT_TESTS DESTDIR=$WORKSPACE/rootfs distribution && \
-make -DNO_ROOT -DWITHOUT_TESTS DESTDIR=$WORKSPACE/rootfs installkernel || exit $?
+make -DNO_ROOT -DWITHOUT_TESTS TMPDIR=$WORKSPACE/tmp DESTDIR=$WORKSPACE/rootfs installworld && \
+make -DNO_ROOT -DWITHOUT_TESTS TMPDIR=$WORKSPACE/tmp DESTDIR=$WORKSPACE/rootfs distribution && \
+make -DNO_ROOT -DWITHOUT_TESTS TMPDIR=$WORKSPACE/tmp DESTDIR=$WORKSPACE/rootfs installkernel || exit $?
 
 #
 # Create swap file
