@@ -22,3 +22,4 @@
 ./root type=dir uname=root gname=wheel mode=0755
 ./root/.ssh type=dir uname=root gname=wheel mode=0700
 ./root/.ssh/authorized_keys type=file uname=root gname=wheel mode=0600
+./root/.gdbinit type=file uname=root gname=wheel mode=644
