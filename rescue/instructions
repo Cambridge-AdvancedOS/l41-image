@@ -1,0 +1,12 @@
+1. on mgmt1 make symlink /tftpboot/boot -> boot-rescue.20230116
+2. reboot victim node
+3. in u-boot of victim "run bootcmd_rescue"
+4. once it is booted, replace symlink back to original on mgmt1
+5. run "dhclient genet0" on the victim so we have IP
+6. run "nc -l 19000 | dd bs=4M of=/dev/mmcsd0s2a" on the victim
+7. run "dd bs=4m if=rootfs-node.img | nc VICTIM_IP 19000" on another node
+8. reboot victim
+9. wait a newly booted victim boot grows it fs (automatic procedure)
+10. ssh to victim and replace hostname in /etc/rc.conf
+11. truncate -s 8g /usr/swap0
+12. reboot victim once again
