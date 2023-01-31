@@ -39,6 +39,7 @@ if ($?prompt) then
 	set mail = (/var/mail/$USER)
 	if ( $?tcsh ) then
 		bindkey "^W" backward-delete-word
+		bindkey "\e[3~" delete-char
 		bindkey -k up history-search-backward
 		bindkey -k down history-search-forward
 	endif
