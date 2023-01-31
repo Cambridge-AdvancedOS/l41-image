@@ -21,7 +21,13 @@ umask 22
 
 set path = (/sbin /bin /usr/sbin /usr/bin /usr/local/sbin /usr/local/bin $HOME/bin)
 
-setenv	EDITOR	vi
+if ( -f /usr/local/bin/vim ) then
+	setenv	EDITOR	vim
+else if ( -f /usr/local/bin/nano ) then
+	setenv	EDITOR	nano
+else
+	setenv	EDITOR	vi
+endif
 setenv	PAGER	less
 
 if ($?prompt) then
