@@ -1,0 +1,1174 @@
+commit d7fd9d009ea8db8dd50e0602eae91ca50d6bad31
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Fri Dec 31 23:54:33 2021 +0000
+
+    Lift freebsd/main 3d2533f5c29fbf6e63c5e408ba13c2294a7612fd, which corrects
+    a regression in which DDB and DTrace are unable to instrument code in
+    kernel modules.
+    
+    commit 3d2533f5c29fbf6e63c5e408ba13c2294a7612fd
+    Author: Andrew Turner <andrew@FreeBSD.org>
+    Date:   Tue Sep 21 17:10:57 2021 +0000
+    
+        Allow ddb and dtrace use the DMAP region on arm64
+    
+        When writing to memory on arm64 we may be trying to be accessing a
+        read-only page. In this case try to access via the DMAP region to
+        get a writable location.
+    
+        While here simplify writing data in DDB and stop trashing the size as
+        it is passed into the cache handling functions.
+    
+        Sponsored by:   The FreeBSD Foundation
+        Differential Revision: https://reviews.freebsd.org/D32053
+
+diff --git a/sys/arm64/arm64/db_interface.c b/sys/arm64/arm64/db_interface.c
+index 5138bf3f1cab..289886658905 100644
+--- a/sys/arm64/arm64/db_interface.c
++++ b/sys/arm64/arm64/db_interface.c
+@@ -154,39 +154,24 @@ db_write_bytes(vm_offset_t addr, size_t size, char *data)
+ 	jmp_buf jb;
+ 	void *prev_jb;
+ 	char *dst;
++	size_t i;
+ 	int ret;
+-	uint64_t tmp64;
+-	uint32_t tmp32;
+-	uint16_t tmp16;
+ 
+ 	prev_jb = kdb_jmpbuf(jb);
+ 	ret = setjmp(jb);
+ 	if (ret == 0) {
+-		if (size == 8 && (addr & 7) == 0) {
+-			dst = (char *)&tmp64;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint64_t *)addr) = tmp64;
+-		} else if (size == 4 && (addr & 3) == 0) {
+-			dst = (char *)&tmp32;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp32;
+-		} else if (size == 2 && (addr & 1) == 0) {
+-			dst = (char *)&tmp16;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp16;
++		if (!arm64_get_writable_addr(addr, &addr)) {
++			ret = 1;
+ 		} else {
+ 			dst = (char *)addr;
+-			while (size-- > 0)
++			for (i = 0; i < size; i++)
+ 				*dst++ = *data++;
+-		}
+-		dsb(ish);
++			dsb(ish);
+ 
+-		/* Clean D-cache and invalidate I-cache */
+-		cpu_dcache_wb_range(addr, (vm_size_t)size);
+-		cpu_icache_sync_range(addr, (vm_size_t)size);
++			/* Clean D-cache and invalidate I-cache */
++			cpu_dcache_wb_range(addr, (vm_size_t)size);
++			cpu_icache_sync_range(addr, (vm_size_t)size);
++		}
+ 	}
+ 	(void)kdb_jmpbuf(prev_jb);
+ 
+diff --git a/sys/arm64/arm64/machdep.c b/sys/arm64/arm64/machdep.c
+index b4a2a8cdd8e5..ad28c3369e32 100644
+--- a/sys/arm64/arm64/machdep.c
++++ b/sys/arm64/arm64/machdep.c
+@@ -362,6 +362,42 @@ init_proc0(vm_offset_t kstack)
+ 	serror_enable();
+ }
+ 
++/*
++ * Get an address to be used to write to kernel data that may be mapped
++ * read-only, e.g. to patch kernel code.
++ */
++bool
++arm64_get_writable_addr(vm_offset_t addr, vm_offset_t *out)
++{
++	vm_paddr_t pa;
++
++	/* Check if the page is writable */
++	if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++		*out = addr;
++		return (true);
++	}
++
++	/*
++	 * Find the physical address of the given page.
++	 */
++	if (!pmap_klookup(addr, &pa)) {
++		return (false);
++	}
++
++	/*
++	 * If it is within the DMAP region and is writable use that.
++	 */
++	if (PHYS_IN_DMAP(pa)) {
++		addr = PHYS_TO_DMAP(pa);
++		if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++			*out = addr;
++			return (true);
++		}
++	}
++
++	return (false);
++}
++
+ typedef struct {
+ 	uint32_t type;
+ 	uint64_t phys_start;
+diff --git a/sys/arm64/include/cpufunc.h b/sys/arm64/include/cpufunc.h
+index 94af62380de3..16133903841f 100644
+--- a/sys/arm64/include/cpufunc.h
++++ b/sys/arm64/include/cpufunc.h
+@@ -246,6 +246,7 @@ int arm64_icache_sync_range_checked(vm_offset_t, vm_size_t);
+ void arm64_dcache_wbinv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_inv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_wb_range(vm_offset_t, vm_size_t);
++bool arm64_get_writable_addr(vm_offset_t, vm_offset_t *);
+ 
+ #endif	/* _KERNEL */
+ #endif	/* _MACHINE_CPUFUNC_H_ */
+diff --git a/sys/cddl/dev/fbt/aarch64/fbt_isa.c b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+index 6bc351ad74f6..cbfbb4778176 100644
+--- a/sys/cddl/dev/fbt/aarch64/fbt_isa.c
++++ b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+@@ -74,8 +74,12 @@ fbt_invop(uintptr_t addr, struct trapframe *frame, uintptr_t rval)
+ void
+ fbt_patch_tracepoint(fbt_probe_t *fbt, fbt_patchval_t val)
+ {
++	vm_offset_t addr;
+ 
+-	*fbt->fbtp_patchpoint = val;
++	if (!arm64_get_writable_addr((vm_offset_t)fbt->fbtp_patchpoint, &addr))
++		panic("%s: Unable to write new instruction", __func__);
++
++	*(fbt_patchval_t *)addr = val;
+ 	cpu_icache_sync_range((vm_offset_t)fbt->fbtp_patchpoint, 4);
+ }
+ 
+
+commit 30d515156a5ce7a12d0f5c1db6a19c6c63a85798
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Fri Dec 31 23:40:56 2021 +0000
+
+    Enable kernel GDB support in the ADVOPSYS kernel configuration.
+
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+index 89e9192d9b4b..9510c71da6dd 100644
+--- a/sys/arm64/conf/ADVOPSYS
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -16,3 +16,4 @@ options 	IPFIREWALL_DEFAULT_TO_ACCEPT
+ 
+ options 	KDB_UNATTENDED
+ options 	DDB
++options 	GDB
+
+commit 59c6d088ca78fc61f7e37ac3402d4bbcac447cfe
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Thu Dec 30 20:47:21 2021 +0000
+
+    For ADVOPSYS, include DDB in the kernel, but don't enter DDB on panic.
+
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+index 6b555dad3392..89e9192d9b4b 100644
+--- a/sys/arm64/conf/ADVOPSYS
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -13,3 +13,6 @@ ident		ADVOPSYS
+ options 	DUMMYNET
+ options 	IPFIREWALL
+ options 	IPFIREWALL_DEFAULT_TO_ACCEPT
++
++options 	KDB_UNATTENDED
++options 	DDB
+
+commit 7f509b835c13332f0a669b00078105178c418a2c
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Thu Dec 30 20:43:51 2021 +0000
+
+    Revert prior change; the issue is not hwpmc, but FBT support for modules
+    on aarch64.
+
+diff --git a/sys/cddl/dev/fbt/fbt.c b/sys/cddl/dev/fbt/fbt.c
+index 5abe70c0f36c..3bad4243c040 100644
+--- a/sys/cddl/dev/fbt/fbt.c
++++ b/sys/cddl/dev/fbt/fbt.c
+@@ -201,13 +201,6 @@ fbt_provide_module(void *arg, modctl_t *lf)
+ 	if (strcmp(modname, "dtrace") == 0)
+ 		return;
+ 
+-	/*
+-	 * HWPMC: Just not going there, due to its potential to instrument
+-	 * DTrace itself.
+-	 */
+-	if (strcmp(modname, "hwpmc") == 0)
+-		return;
+-
+ 	/*
+ 	 * To register with DTrace, a module must list 'dtrace' as a
+ 	 * dependency in order for the kernel linker to resolve
+
+commit 0437fdcead5a211a20cba593ab5b7d9a332e3e91
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Thu Dec 30 00:59:15 2021 +0000
+
+    Exclude hwpmc from FBT instrumentation, although a better fix would be more
+    desirable.
+
+diff --git a/sys/cddl/dev/fbt/fbt.c b/sys/cddl/dev/fbt/fbt.c
+index 3bad4243c040..5abe70c0f36c 100644
+--- a/sys/cddl/dev/fbt/fbt.c
++++ b/sys/cddl/dev/fbt/fbt.c
+@@ -201,6 +201,13 @@ fbt_provide_module(void *arg, modctl_t *lf)
+ 	if (strcmp(modname, "dtrace") == 0)
+ 		return;
+ 
++	/*
++	 * HWPMC: Just not going there, due to its potential to instrument
++	 * DTrace itself.
++	 */
++	if (strcmp(modname, "hwpmc") == 0)
++		return;
++
+ 	/*
+ 	 * To register with DTrace, a module must list 'dtrace' as a
+ 	 * dependency in order for the kernel linker to resolve
+
+commit 35bc8223aa760b11e80f6ec20962d84f62e07575
+Merge: 8b764377574e 0b12cc411b46
+Author: Ruslan Bukin <br@bsdpad.com>
+Date:   Tue Dec 14 13:50:28 2021 +0000
+
+    Merge branch 'stable/13' of https://github.com/freebsd/freebsd-src into l41-2021-2022-stable/13
+
+commit 8b764377574e0333ef12d245fd7c2d2566b373d3
+Author: Robert Watson <rwatson@FreeBSD.org>
+Date:   Mon Mar 29 12:15:53 2021 +0100
+
+    Missed addition of ADVOPSYS kernel configuration file.
+
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+new file mode 100644
+index 000000000000..6b555dad3392
+--- /dev/null
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -0,0 +1,15 @@
++#
++# ADVOPSYS
++#
++# Custom kernel for arm64 that includes optional kernel features required for
++# Cambridge Advanced Operating Systems (Part II / Part III / ACS).
++#
++
++#NO_UNIVERSE
++
++include		GENERIC-MMCCAM
++ident		ADVOPSYS
++
++options 	DUMMYNET
++options 	IPFIREWALL
++options 	IPFIREWALL_DEFAULT_TO_ACCEPT
+
+commit a39dfee72daf65798636f5588cccb6ab1ac7818e
+Author: Robert Watson <rwatson@FreeBSD.org>
+Date:   Sat Mar 27 16:32:45 2021 +0000
+
+    Various tidyings up of the DTrace aarch64 stack-tracing code -- remove
+    debugging, trim 'intrpc', cleanup function prototypes.
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index 615fc3a167b5..087cfff097ff 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -72,22 +72,6 @@ extern void *__handle_el1h_sync_end;
+ 
+ SYSCTL_DECL(_kern_dtrace);
+ 
+-/*
+- * Force aframes to zero regardless of the provider.
+- */
+-static int kern_dtrace_pcstack_aframes_zero;
+-SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_aframes_zero, CTLFLAG_RW,
+-    &kern_dtrace_pcstack_aframes_zero, 0,
+-    "Force DTrace stack-trace aframes to zero");
+-
+-/*
+- * Only record frames at or after the passed PC value.
+- */
+-static int kern_dtrace_stack_start_at_intrpc = 1;
+-SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_start_at_intrpc, CTLFLAG_RW,
+-    &kern_dtrace_stack_start_at_intrpc, 0,
+-    "Only record stack frames once we've hit the exception PC");
+-
+ /*
+  * Enable trap-frame handling.
+  */
+@@ -103,40 +87,11 @@ static int kern_dtrace_aframes = 1;
+ SYSCTL_INT(_kern_dtrace, OID_AUTO, aframes, CTLFLAG_RW, &kern_dtrace_aframes,
+     0, "Enable processing of aframes requested by the provider");
+ 
+-/*
+- * Enable artifical frames at the start of the trace.
+- */
+-static int kern_dtrace_pcstack_debug = 0;
+-SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_debug, CTLFLAG_RW,
+-    &kern_dtrace_pcstack_debug, 0,
+-    "Inject psecial frames with debug data");
+-
+-/*
+- * Allow dtrace_caller to replace intrpc when defined.
+- */
+-static int kern_dtrace_pcstack_dtracecaller = 1;
+-SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_dtracecaller, CTLFLAG_RW,
+-    &kern_dtrace_pcstack_dtracecaller, 0,
+-    "Allow cpu->pc_dtrace_caller to replace intrprc for FDT probes");
+-
+-static int kern_dtrace_pcstack_pcfound;
+-SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_pcfound, CTLFLAG_RD,
+-    &kern_dtrace_pcstack_pcfound, 0,
+-    "Count of the number of times intrpc matched, enabling tracing");
+-
+ static void
+ dtrace_pushstack(pc_t *pcstack, int pcstack_limit, int *aframesp, int *depthp,
+-    intptr_t pc, int *pc_foundp, intptr_t pc_target)
++    intptr_t pc)
+ {
+ 
+-	if (kern_dtrace_stack_start_at_intrpc && pc_foundp != NULL) {
+-		if (!(*pc_foundp)) {
+-			if (pc != pc_target)
+-				return;
+-			*pc_foundp = 1;
+-			kern_dtrace_pcstack_pcfound++;
+-		}
+-	}
+ 	if (*depthp == pcstack_limit)
+ 		return;
+ 	if (kern_dtrace_aframes && aframesp != NULL) {
+@@ -149,15 +104,6 @@ dtrace_pushstack(pc_t *pcstack, int pcstack_limit, int *aframesp, int *depthp,
+ 	(*depthp)++;
+ }
+ 
+-static void
+-dtrace_pushstack_nopcfound(pc_t *pcstack, int pcstack_limit, int *aframesp,
+-    int *depthp, intptr_t pc)
+-{
+-
+-	dtrace_pushstack(pcstack, pcstack_limit, aframesp, depthp, pc, NULL,
+-	    0);
+-}
+-
+ static int
+ dtrace_el1_handler_pc(register_t pc)
+ {
+@@ -180,29 +126,6 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 	int pc_found;
+ 	int depth;
+ 
+-	/*
+-	 * When running with FBT, intrpc is not set to a value that appears in
+-	 * the stack, so instead search for cpu_dtrace_caller.  Only FBT sets
+-	 * up cpu_dtrace_caller, and clears it after the probe completes.
+-	 */
+-	if (kern_dtrace_pcstack_dtracecaller &&
+-	    ((pc_t)solaris_cpu[curcpu].cpu_dtrace_caller != 0))
+-		intrpc = (void *)(pc_t)solaris_cpu[curcpu].cpu_dtrace_caller;
+-
+-	/*
+-	 * Can't search for the intrpc if we don't process trapframes, or if
+-	 * the caller fails to provide an intrpc value.
+-	 */
+-	if (!kern_dtrace_stack_trapframes || intrpc == 0)
+-		kern_dtrace_stack_start_at_intrpc = 0;
+-
+-	/*
+-	 * If we are starting the trace with a specific intrpc, we can ignore
+-	 * aframes.
+-	 */
+-	if (kern_dtrace_stack_start_at_intrpc ||
+-	    kern_dtrace_pcstack_aframes_zero)
+-		aframes = 0;
+ 	depth = 0;
+ 	pc_found = 0;
+ 	pc_prior = NULL;
+@@ -212,28 +135,6 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 	state.sp = sp;
+ 	state.pc = (uintptr_t)dtrace_getpcstack;
+ 
+-	if (kern_dtrace_pcstack_debug) {
+-		/*
+-		 * A zero PC causes the stack printer to terminate, so
+-		 * substitute a non-zero value if required.
+-		 */
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, 0x2b2b);
+-		if ((uintptr_t)intrpc != 0)
+-			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
+-			    NULL, &depth, (uintptr_t)intrpc);
+-		else
+-			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
+-			    NULL, &depth, -1);
+-		if (aframes != 0)
+-			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
+-			    NULL, &depth, aframes);
+-		else
+-			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
+-			    NULL, &depth, -1);
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, 0x2b2b);
+-	}
+ 	while (depth < pcstack_limit) {
+ 		if (!unwind_frame(curthread, &state))
+ 			break;
+@@ -254,7 +155,7 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			 * Print the exception-handler PC reliably first.
+ 			 */
+ 			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
+-			    &depth, state.pc, &pc_found, (intptr_t)intrpc);
++			    &depth, state.pc);
+ 
+ 			/*
+ 			 * Now find and inspect the stack frame.
+@@ -268,11 +169,8 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			 * other cases?  For now, insert LR twice rather than
+ 			 * no times, but need to do better.
+ 			 */
+-			if (kern_dtrace_pcstack_debug)
+-				dtrace_pushstack_nopcfound(pcstack,
+-				    pcstack_limit, &aframes, &depth, 0xeeee);
+ 			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
+-			    &depth, tf->tf_elr, &pc_found, (intptr_t)intrpc);
++			    &depth, tf->tf_elr);
+ 
+ 			/*
+ 			 * NB: As with unwind_state(), trim 4 from LR to give
+@@ -281,10 +179,7 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			 */
+ 			pc_prior = (void *)(tf->tf_lr - 4);
+ 			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
+-			    &depth, tf->tf_lr - 4, &pc_found, (intptr_t)intrpc);
+-			if (kern_dtrace_pcstack_debug)
+-				dtrace_pushstack_nopcfound(pcstack,
+-				    pcstack_limit, &aframes, &depth, 0xeeee);
++			    &depth, tf->tf_lr - 4);
+ 
+ 			/*
+ 			 * Use exception frame to find the next stack frame
+@@ -313,15 +208,11 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			if (pc_prior == NULL ||
+ 			    (pc_prior != NULL && pc_prior != (void *)state.pc))
+ 				dtrace_pushstack(pcstack, pcstack_limit,
+-				    &aframes, &depth, state.pc, &pc_found,
+-				    (intptr_t)intrpc);
++				    &aframes, &depth, state.pc);
+ 			pc_prior = NULL;
+ 		}
+ 	}
+ 
+-	if (kern_dtrace_pcstack_debug)
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, &aframes,
+-		    &depth, 0xe0e0);
+ 	for (; depth < pcstack_limit; depth++) {
+ 		pcstack[depth] = 0;
+ 	}
+
+commit b149a9781d9e9c6fbc3aabc2191bf80d26209455
+Author: Robert Watson <rwatson@FreeBSD.org>
+Date:   Mon Mar 22 01:47:41 2021 +0000
+
+    Teach DTrace that unaligned accesses are allowed on aarch64, not just x86.
+
+diff --git a/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c b/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
+index b212185a4578..ca6fa5481856 100644
+--- a/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
++++ b/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
+@@ -475,7 +475,7 @@ static kmutex_t dtrace_errlock;
+ #define	DTRACE_STORE(type, tomax, offset, what) \
+ 	*((type *)((uintptr_t)(tomax) + (uintptr_t)offset)) = (type)(what);
+ 
+-#ifndef __x86
++#if !defined(__x86) && !defined(__aarch64__)
+ #define	DTRACE_ALIGNCHECK(addr, size, flags)				\
+ 	if (addr & (size - 1)) {					\
+ 		*flags |= CPU_DTRACE_BADALIGN;				\
+
+commit 0b0ace4b532d0de3ee43f5891dfcdde17f7f5c00
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Sat Mar 20 23:21:37 2021 +0000
+
+    Tune DTrace FBT provide aframes better on FreeBSD/arm64.
+    
+    By increasing aframes by one, we avoid the EL1 exception handler fielding
+    the FBT-triggered trap appearing in every trace.
+    
+    MFC after:      3 days
+
+diff --git a/sys/cddl/dev/fbt/aarch64/fbt_isa.c b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+index f15bc12291d3..6bc351ad74f6 100644
+--- a/sys/cddl/dev/fbt/aarch64/fbt_isa.c
++++ b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+@@ -44,6 +44,7 @@
+ #define	FBT_PATCHVAL		(AARCH64_BRK | AARCH64_BRK_IMM16_VAL)
+ #define	FBT_ENTRY	"entry"
+ #define	FBT_RETURN	"return"
++#define	FBT_AFRAMES	4
+ 
+ int
+ fbt_invop(uintptr_t addr, struct trapframe *frame, uintptr_t rval)
+@@ -141,7 +142,7 @@ fbt_provide_module_function(linker_file_t lf, int symindx,
+ 	fbt = malloc(sizeof (fbt_probe_t), M_FBT, M_WAITOK | M_ZERO);
+ 	fbt->fbtp_name = name;
+ 	fbt->fbtp_id = dtrace_probe_create(fbt_id, modname,
+-	    name, FBT_ENTRY, 3, fbt);
++	    name, FBT_ENTRY, FBT_AFRAMES, fbt);
+ 	fbt->fbtp_patchpoint = instr;
+ 	fbt->fbtp_ctl = lf;
+ 	fbt->fbtp_loadcnt = lf->loadcnt;
+@@ -183,7 +184,7 @@ fbt_provide_module_function(linker_file_t lf, int symindx,
+ 	fbt->fbtp_name = name;
+ 	if (retfbt == NULL) {
+ 		fbt->fbtp_id = dtrace_probe_create(fbt_id, modname,
+-		    name, FBT_RETURN, 3, fbt);
++		    name, FBT_RETURN, FBT_AFRAMES, fbt);
+ 	} else {
+ 		retfbt->fbtp_probenext = fbt;
+ 		fbt->fbtp_id = retfbt->fbtp_id;
+
+commit 5c409809deae26799a6fc6533dffbc7cfe43c5c7
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Sat Mar 20 15:20:53 2021 +0000
+
+    Adjust non-intrpc stack-trace path to omit with the profile provider to
+    a slightly greater number of frames so as to avoid including the el1
+    exception handler.
+
+diff --git a/sys/cddl/dev/profile/profile.c b/sys/cddl/dev/profile/profile.c
+index bffcbf073092..ca373f50a1a0 100644
+--- a/sys/cddl/dev/profile/profile.c
++++ b/sys/cddl/dev/profile/profile.c
+@@ -140,8 +140,7 @@ struct profile_probe_percpu;
+ #endif
+ 
+ #ifdef __aarch64__
+-/* TODO: verify */
+-#define	PROF_ARTIFICIAL_FRAMES	11
++#define	PROF_ARTIFICIAL_FRAMES	12
+ #endif
+ 
+ #ifdef __riscv
+
+commit 02e584ea1009e27737c4bdd2b0c56fda288b6e98
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Sat Mar 20 14:59:53 2021 +0000
+
+    Add a sysctl to adjust PIPE_MINDIRECT.
+
+diff --git a/sys/kern/sys_pipe.c b/sys/kern/sys_pipe.c
+index 558337794950..4c603fd96bfa 100644
+--- a/sys/kern/sys_pipe.c
++++ b/sys/kern/sys_pipe.c
+@@ -209,6 +209,7 @@ static int pipefragretry;
+ static int pipeallocfail;
+ static int piperesizefail;
+ static int piperesizeallowed = 1;
++static long pipe_mindirect = PIPE_MINDIRECT;
+ 
+ SYSCTL_LONG(_kern_ipc, OID_AUTO, maxpipekva, CTLFLAG_RDTUN | CTLFLAG_NOFETCH,
+ 	   &maxpipekva, 0, "Pipe KVA limit");
+@@ -222,6 +223,8 @@ SYSCTL_INT(_kern_ipc, OID_AUTO, piperesizefail, CTLFLAG_RD,
+ 	  &piperesizefail, 0, "Pipe resize failures");
+ SYSCTL_INT(_kern_ipc, OID_AUTO, piperesizeallowed, CTLFLAG_RW,
+ 	  &piperesizeallowed, 0, "Pipe resizing allowed");
++SYSCTL_LONG(_kern_ipc, OID_AUTO, pipe_mindirect, CTLFLAG_RWTUN,
++	  &pipe_mindirect, 0, "Pipe minimum I/OO size for VM optimization");
+ 
+ static void pipeinit(void *dummy __unused);
+ static void pipeclose(struct pipe *cpipe);
+@@ -1140,8 +1143,8 @@ pipe_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
+ 		 * away on us.
+ 		 */
+ 		if (uio->uio_segflg == UIO_USERSPACE &&
+-		    uio->uio_iov->iov_len >= PIPE_MINDIRECT &&
+-		    wpipe->pipe_buffer.size >= PIPE_MINDIRECT &&
++		    uio->uio_iov->iov_len >= pipe_mindirect &&
++		    wpipe->pipe_buffer.size >= pipe_mindirect &&
+ 		    (fp->f_flag & FNONBLOCK) == 0) {
+ 			error = pipe_direct_write(wpipe, uio);
+ 			if (error != 0)
+
+commit c1bcab1791c32db993e8b86b1383f872d1e75aa3
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Tue Feb 23 00:45:18 2021 +0000
+
+    A bit of further DTrace stack tracing refinement.
+    
+    (1) If intrpc is set to 0, ignore it and use aframes.  Some providers
+        do not set this even though they do all use traps (?).
+    
+    (2) When injecting debug state into the stack trace, replace 0 with
+        -1 to avoid terminating the trace prematurely: userspace DTrace
+        stops printing if it hits a PC of zero.
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index 9df79cab36d4..615fc3a167b5 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -190,9 +190,10 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 		intrpc = (void *)(pc_t)solaris_cpu[curcpu].cpu_dtrace_caller;
+ 
+ 	/*
+-	 * Can't search for the intrpc if we don't process trapframes.
++	 * Can't search for the intrpc if we don't process trapframes, or if
++	 * the caller fails to provide an intrpc value.
+ 	 */
+-	if (!kern_dtrace_stack_trapframes)
++	if (!kern_dtrace_stack_trapframes || intrpc == 0)
+ 		kern_dtrace_stack_start_at_intrpc = 0;
+ 
+ 	/*
+@@ -212,12 +213,24 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 	state.pc = (uintptr_t)dtrace_getpcstack;
+ 
+ 	if (kern_dtrace_pcstack_debug) {
++		/*
++		 * A zero PC causes the stack printer to terminate, so
++		 * substitute a non-zero value if required.
++		 */
+ 		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+ 		    &depth, 0x2b2b);
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, (uintptr_t)intrpc);
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, aframes);
++		if ((uintptr_t)intrpc != 0)
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, (uintptr_t)intrpc);
++		else
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, -1);
++		if (aframes != 0)
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, aframes);
++		else
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, -1);
+ 		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+ 		    &depth, 0x2b2b);
+ 	}
+
+commit 203ded563e39fac645e3f397e3d6dbbd16fab31e
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Tue Feb 23 00:25:30 2021 +0000
+
+    Enable use of intrpc by default, avoiding the use of aframes in stack().
+    The profile and fbt providers seem to produce more reliable starts to their
+    stack traces with this option enabled, which should also be more robust to
+    compiler inlining, etc.
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index da4fdf09469c..9df79cab36d4 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -83,7 +83,7 @@ SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_aframes_zero, CTLFLAG_RW,
+ /*
+  * Only record frames at or after the passed PC value.
+  */
+-static int kern_dtrace_stack_start_at_intrpc = 0;
++static int kern_dtrace_stack_start_at_intrpc = 1;
+ SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_start_at_intrpc, CTLFLAG_RW,
+     &kern_dtrace_stack_start_at_intrpc, 0,
+     "Only record stack frames once we've hit the exception PC");
+
+commit 33779bd9174b3835202f3aa443a50d7be8a6a4e6
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Mon Feb 22 17:58:51 2021 +0000
+
+    Do various evil things to make DTrace stack() work much better on aarch64.
+    
+    This includes:
+    
+    - Detect when we're within exception handlers and decode the trap frame
+      to more properly show trap-related events.
+    - Deduplicate the resulting PCs in the event we're generating the stack
+      trace from within a function without a stack frame.
+    - Add various bits of debug tooling to be deleted at the earliest
+      opportunity.
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index db47423e9d33..da4fdf09469c 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -31,6 +31,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/stack.h>
++#include <sys/sysctl.h>
+ #include <sys/pcpu.h>
+ 
+ #include <machine/frame.h>
+@@ -64,29 +65,162 @@ uint16_t dtrace_fuword16_nocheck(void *);
+ uint32_t dtrace_fuword32_nocheck(void *);
+ uint64_t dtrace_fuword64_nocheck(void *);
+ 
++extern void *__handle_el1h_irq_start;
++extern void *__handle_el1h_irq_end;
++extern void *__handle_el1h_sync_start;
++extern void *__handle_el1h_sync_end;
++
++SYSCTL_DECL(_kern_dtrace);
++
++/*
++ * Force aframes to zero regardless of the provider.
++ */
++static int kern_dtrace_pcstack_aframes_zero;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_aframes_zero, CTLFLAG_RW,
++    &kern_dtrace_pcstack_aframes_zero, 0,
++    "Force DTrace stack-trace aframes to zero");
++
++/*
++ * Only record frames at or after the passed PC value.
++ */
++static int kern_dtrace_stack_start_at_intrpc = 0;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_start_at_intrpc, CTLFLAG_RW,
++    &kern_dtrace_stack_start_at_intrpc, 0,
++    "Only record stack frames once we've hit the exception PC");
++
++/*
++ * Enable trap-frame handling.
++ */
++static int kern_dtrace_stack_trapframes = 1;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_trapframes, CTLFLAG_RW,
++    &kern_dtrace_stack_trapframes, 0,
++    "Enable parsing of trap frames");
++
++/*
++ * Enable handling of aframes.
++ */
++static int kern_dtrace_aframes = 1;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, aframes, CTLFLAG_RW, &kern_dtrace_aframes,
++    0, "Enable processing of aframes requested by the provider");
++
++/*
++ * Enable artifical frames at the start of the trace.
++ */
++static int kern_dtrace_pcstack_debug = 0;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_debug, CTLFLAG_RW,
++    &kern_dtrace_pcstack_debug, 0,
++    "Inject psecial frames with debug data");
++
++/*
++ * Allow dtrace_caller to replace intrpc when defined.
++ */
++static int kern_dtrace_pcstack_dtracecaller = 1;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_dtracecaller, CTLFLAG_RW,
++    &kern_dtrace_pcstack_dtracecaller, 0,
++    "Allow cpu->pc_dtrace_caller to replace intrprc for FDT probes");
++
++static int kern_dtrace_pcstack_pcfound;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_pcfound, CTLFLAG_RD,
++    &kern_dtrace_pcstack_pcfound, 0,
++    "Count of the number of times intrpc matched, enabling tracing");
++
++static void
++dtrace_pushstack(pc_t *pcstack, int pcstack_limit, int *aframesp, int *depthp,
++    intptr_t pc, int *pc_foundp, intptr_t pc_target)
++{
++
++	if (kern_dtrace_stack_start_at_intrpc && pc_foundp != NULL) {
++		if (!(*pc_foundp)) {
++			if (pc != pc_target)
++				return;
++			*pc_foundp = 1;
++			kern_dtrace_pcstack_pcfound++;
++		}
++	}
++	if (*depthp == pcstack_limit)
++		return;
++	if (kern_dtrace_aframes && aframesp != NULL) {
++		if ((*aframesp) > 0) {
++			(*aframesp)--;
++			return;
++		}
++	}
++	pcstack[*depthp] = pc;
++	(*depthp)++;
++}
++
++static void
++dtrace_pushstack_nopcfound(pc_t *pcstack, int pcstack_limit, int *aframesp,
++    int *depthp, intptr_t pc)
++{
++
++	dtrace_pushstack(pcstack, pcstack_limit, aframesp, depthp, pc, NULL,
++	    0);
++}
++
++static int
++dtrace_el1_handler_pc(register_t pc)
++{
++
++	return ((pc >= (uintptr_t)&__handle_el1h_irq_start &&
++	     pc < (uintptr_t)&__handle_el1h_irq_end) ||
++	    (pc >= (uintptr_t)&__handle_el1h_sync_start &&
++	     pc < (uintptr_t)&__handle_el1h_sync_end));
++}
++
+ void
+ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+     uint32_t *intrpc)
+ {
+-	struct unwind_state state;
++	struct unwind_state state, nextframe_state;
++	struct trapframe *tf;
+ 	int scp_offset;
+-	register_t sp;
++	register_t sp, exception_lr, non_exception_lr;
++	void *pc_prior;
++	int pc_found;
+ 	int depth;
+ 
+-	depth = 0;
++	/*
++	 * When running with FBT, intrpc is not set to a value that appears in
++	 * the stack, so instead search for cpu_dtrace_caller.  Only FBT sets
++	 * up cpu_dtrace_caller, and clears it after the probe completes.
++	 */
++	if (kern_dtrace_pcstack_dtracecaller &&
++	    ((pc_t)solaris_cpu[curcpu].cpu_dtrace_caller != 0))
++		intrpc = (void *)(pc_t)solaris_cpu[curcpu].cpu_dtrace_caller;
+ 
+-	if (intrpc != 0) {
+-		pcstack[depth++] = (pc_t) intrpc;
+-	}
++	/*
++	 * Can't search for the intrpc if we don't process trapframes.
++	 */
++	if (!kern_dtrace_stack_trapframes)
++		kern_dtrace_stack_start_at_intrpc = 0;
+ 
+-	aframes++;
++	/*
++	 * If we are starting the trace with a specific intrpc, we can ignore
++	 * aframes.
++	 */
++	if (kern_dtrace_stack_start_at_intrpc ||
++	    kern_dtrace_pcstack_aframes_zero)
++		aframes = 0;
++	depth = 0;
++	pc_found = 0;
++	pc_prior = NULL;
+ 
+ 	__asm __volatile("mov %0, sp" : "=&r" (sp));
+-
+ 	state.fp = (uintptr_t)__builtin_frame_address(0);
+ 	state.sp = sp;
+ 	state.pc = (uintptr_t)dtrace_getpcstack;
+ 
++	if (kern_dtrace_pcstack_debug) {
++		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
++		    &depth, 0x2b2b);
++		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
++		    &depth, (uintptr_t)intrpc);
++		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
++		    &depth, aframes);
++		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
++		    &depth, 0x2b2b);
++	}
+ 	while (depth < pcstack_limit) {
+ 		if (!unwind_frame(curthread, &state))
+ 			break;
+@@ -94,18 +228,87 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			break;
+ 
+ 		/*
+-		 * NB: Unlike some other architectures, we don't need to
+-		 * explicitly insert cpu_dtrace_caller as it appears in the
+-		 * normal kernel stack trace rather than a special trap frame.
++		 * If the stack frame belongs to either the _sync or _irq EL1
++		 * exception handler, then we expect an adjacent trapframe
++		 * from which we can also extract state.  Using that frame's
++		 * ELR (and perhaps LR) will give a more accurate stack trace
++		 * than using the synthetic frame pushed by the exception
++		 * handler.
+ 		 */
+-		if (aframes > 0) {
+-			aframes--;
++		if (kern_dtrace_stack_trapframes &&
++		    dtrace_el1_handler_pc(state.pc)) {
++			/*
++			 * Print the exception-handler PC reliably first.
++			 */
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, state.pc, &pc_found, (intptr_t)intrpc);
++
++			/*
++			 * Now find and inspect the stack frame.
++			 */
++			tf = (struct trapframe *)(uintptr_t)state.fp - 1;
++
++			/*
++			 * XXX: We need to handle the case where there's no
++			 * stack frame for the preempted function, and so we
++			 * skip a frame.  But how to distinguish from the
++			 * other cases?  For now, insert LR twice rather than
++			 * no times, but need to do better.
++			 */
++			if (kern_dtrace_pcstack_debug)
++				dtrace_pushstack_nopcfound(pcstack,
++				    pcstack_limit, &aframes, &depth, 0xeeee);
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, tf->tf_elr, &pc_found, (intptr_t)intrpc);
++
++			/*
++			 * NB: As with unwind_state(), trim 4 from LR to give
++			 * what is presumed to be the caller site, not the
++			 * LR target.
++			 */
++			pc_prior = (void *)(tf->tf_lr - 4);
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, tf->tf_lr - 4, &pc_found, (intptr_t)intrpc);
++			if (kern_dtrace_pcstack_debug)
++				dtrace_pushstack_nopcfound(pcstack,
++				    pcstack_limit, &aframes, &depth, 0xeeee);
++
++			/*
++			 * Use exception frame to find the next stack frame
++			 * up.
++			 *
++			 * XXXRW: What if it has no frame .. should we be
++			 * using LR instead ..?
++			 */
++			state.fp = tf->tf_x[29];
++			state.pc = tf->tf_elr;
++			if (!INKERNEL(state.pc))
++				break;
++			if (!INKERNEL(state.fp))
++				break;
+ 		} else {
+-			pcstack[depth++] = state.pc;
++			/*
++			 * Print a regular frame.
++			 *
++			 * If the PC is identical to the one we just printed
++			 * on the way out of an exception return, suppress the
++			 * duplicate.  Most likely we were in a function
++			 * that didn't have its own stack frame (e.g.,
++			 * memcpy).  In the kernel, it's unlikely to be a
++			 * recursive call.
++			 */
++			if (pc_prior == NULL ||
++			    (pc_prior != NULL && pc_prior != (void *)state.pc))
++				dtrace_pushstack(pcstack, pcstack_limit,
++				    &aframes, &depth, state.pc, &pc_found,
++				    (intptr_t)intrpc);
++			pc_prior = NULL;
+ 		}
+-
+ 	}
+ 
++	if (kern_dtrace_pcstack_debug)
++		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, &aframes,
++		    &depth, 0xe0e0);
+ 	for (; depth < pcstack_limit; depth++) {
+ 		pcstack[depth] = 0;
+ 	}
+
+commit 7ce8968df41f3606140a2fd7a45b8f6e388f03ec
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Mon Feb 22 17:58:25 2021 +0000
+
+    Bump artificial frames for the DTrace profile provider on aarch64.
+
+diff --git a/sys/cddl/dev/profile/profile.c b/sys/cddl/dev/profile/profile.c
+index 4fc9f6f22eef..bffcbf073092 100644
+--- a/sys/cddl/dev/profile/profile.c
++++ b/sys/cddl/dev/profile/profile.c
+@@ -141,7 +141,7 @@ struct profile_probe_percpu;
+ 
+ #ifdef __aarch64__
+ /* TODO: verify */
+-#define	PROF_ARTIFICIAL_FRAMES	10
++#define	PROF_ARTIFICIAL_FRAMES	11
+ #endif
+ 
+ #ifdef __riscv
+
+commit 667601043f177c7457bb9971404f4b49a8d55ab8
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Mon Feb 22 17:57:36 2021 +0000
+
+    Add stack frames for aarch64 memory-zeroing functions.
+    
+    With this change they are more visible in stack traces.
+
+diff --git a/sys/arm64/arm64/bzero.S b/sys/arm64/arm64/bzero.S
+index 6c7f1fef1494..1a95a7b99140 100644
+--- a/sys/arm64/arm64/bzero.S
++++ b/sys/arm64/arm64/bzero.S
+@@ -39,6 +39,8 @@ __FBSDID("$FreeBSD$");
+ 	 *  x1 - size
+ 	 */
+ ENTRY(bzero)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	cbz	x1, ending
+ 
+ 	/*
+@@ -200,6 +202,7 @@ cache_line_zero:
+ 	b.ne	normal
+ 
+ ending:
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(bzero)
+diff --git a/sys/arm64/arm64/support.S b/sys/arm64/arm64/support.S
+index 4771814a9b45..c9efa592943b 100644
+--- a/sys/arm64/arm64/support.S
++++ b/sys/arm64/arm64/support.S
+@@ -227,6 +227,8 @@ END(longjmp)
+  * pagezero, simple implementation
+  */
+ ENTRY(pagezero_simple)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 1:
+@@ -236,6 +238,7 @@ ENTRY(pagezero_simple)
+ 	stp	xzr, xzr, [x0], #0x10
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_simple)
+@@ -244,6 +247,8 @@ END(pagezero_simple)
+  * pagezero, cache assisted
+  */
+ ENTRY(pagezero_cache)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 	ldr	x2, =dczva_line_size
+@@ -254,6 +259,7 @@ ENTRY(pagezero_cache)
+ 	add	x0, x0, x2
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_cache)
+
+commit cc07c14fa75679401c758ae16dd4324a849d56a9
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Mon Feb 22 17:57:12 2021 +0000
+
+    Define symbols for the start and end of each assembly-language kernel
+    function in aarch64, so that we can more easily check if the PC is
+    within those ranges.
+
+diff --git a/sys/arm64/include/asm.h b/sys/arm64/include/asm.h
+index 05e618500e59..63165ca35689 100644
+--- a/sys/arm64/include/asm.h
++++ b/sys/arm64/include/asm.h
+@@ -39,13 +39,13 @@
+ #define	_C_LABEL(x)	x
+ 
+ #define	LENTRY(sym)						\
+-	.text; .align 2; .type sym,#function; sym:		\
++	.text; .align 2; .type sym,#function; sym: __ ## sym ## _start: \
+ 	.cfi_startproc
+ #define	ENTRY(sym)						\
+ 	.globl sym; LENTRY(sym)
+ #define	EENTRY(sym)						\
+ 	.globl	sym; sym:
+-#define	LEND(sym) .ltorg; .cfi_endproc; .size sym, . - sym
++#define	LEND(sym) .ltorg; .cfi_endproc; .size sym, . - sym; __ ## sym ## _end:
+ #define	END(sym) LEND(sym)
+ #define	EEND(sym)
+ 
+
+commit 6d50512513ac85acc0941caaec17f22686960e92
+Author: Robert N. M. Watson <robert.watson@cl.cam.ac.uk>
+Date:   Mon Feb 22 17:57:00 2021 +0000
+
+    The trap PC should be ELR and not LR on aarch64.
+
+diff --git a/sys/arm64/include/cpu.h b/sys/arm64/include/cpu.h
+index 529f156f2e96..ab1a1666cbe1 100644
+--- a/sys/arm64/include/cpu.h
++++ b/sys/arm64/include/cpu.h
+@@ -45,7 +45,7 @@
+ #include <machine/frame.h>
+ #include <machine/armreg.h>
+ 
+-#define	TRAPF_PC(tfp)		((tfp)->tf_lr)
++#define	TRAPF_PC(tfp)		((tfp)->tf_elr)
+ #define	TRAPF_USERMODE(tfp)	(((tfp)->tf_spsr & PSR_M_MASK) == PSR_M_EL0t)
+ 
+ #define	cpu_getstack(td)	((td)->td_frame->tf_sp)
+
+commit 07f6b99e20096c463b23e52231b50a18f6fe3ee4
+Author: Robert Watson <rwatson@FreeBSD.org>
+Date:   Tue Feb 16 15:19:05 2021 +0000
+
+    Reimplement the arm64 dtrace_gethrtime(), which provides the
+    high-resolution nanosecond timestamp used for the DTrace 'timestamp'
+    built-in variable.  The new implementation uses the EL0 cycle
+    counter and frequency registers in ARMv8-A.  This replaces a
+    previous implementation that relied on an instrumentation-safe
+    implementation of getnanotime(), which provided only timer
+    resolution.
+    
+    MFC after:      3 days
+    Reviewed by:    andrew, bsdimp (older version)
+    Useful comments appreciated:    jrtc27, emaste
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c b/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
+index 6646e51fc191..9bf9f0798bb5 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
+@@ -153,23 +153,26 @@ dtrace_sync(void)
+ }
+ 
+ /*
+- * DTrace needs a high resolution time function which can
+- * be called from a probe context and guaranteed not to have
+- * instrumented with probes itself.
++ * DTrace needs a high resolution time function which can be called from a
++ * probe context and guaranteed not to have instrumented with probes itself.
+  *
+- * Returns nanoseconds since boot.
++ * Returns nanoseconds since some arbitrary point in time (likely SoC reset?).
+  */
+ uint64_t
+-dtrace_gethrtime()
++dtrace_gethrtime(void)
+ {
+-	struct timespec curtime;
+-
+-	dtrace_getnanouptime(&curtime);
+-
+-	return (curtime.tv_sec * 1000000000UL + curtime.tv_nsec);
++	uint64_t count, freq;
+ 
++	count = READ_SPECIALREG(cntvct_el0);
++	freq = READ_SPECIALREG(cntfrq_el0);
++	return ((1000000000UL * count) / freq);
+ }
+ 
++/*
++ * Return a much lower resolution wallclock time based on the system clock
++ * updated by the timer.  If needed, we could add a version interpolated from
++ * the system clock as is the case with dtrace_gethrtime().
++ */
+ uint64_t
+ dtrace_gethrestime(void)
+ {

@@ -1,0 +1,443 @@
+diff --git a/sys/arm64/arm64/bzero.S b/sys/arm64/arm64/bzero.S
+index 6c7f1fef1494..1a95a7b99140 100644
+--- a/sys/arm64/arm64/bzero.S
++++ b/sys/arm64/arm64/bzero.S
+@@ -39,6 +39,8 @@ __FBSDID("$FreeBSD$");
+ 	 *  x1 - size
+ 	 */
+ ENTRY(bzero)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	cbz	x1, ending
+ 
+ 	/*
+@@ -200,6 +202,7 @@ cache_line_zero:
+ 	b.ne	normal
+ 
+ ending:
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(bzero)
+diff --git a/sys/arm64/arm64/db_interface.c b/sys/arm64/arm64/db_interface.c
+index 5138bf3f1cab..289886658905 100644
+--- a/sys/arm64/arm64/db_interface.c
++++ b/sys/arm64/arm64/db_interface.c
+@@ -154,39 +154,24 @@ db_write_bytes(vm_offset_t addr, size_t size, char *data)
+ 	jmp_buf jb;
+ 	void *prev_jb;
+ 	char *dst;
++	size_t i;
+ 	int ret;
+-	uint64_t tmp64;
+-	uint32_t tmp32;
+-	uint16_t tmp16;
+ 
+ 	prev_jb = kdb_jmpbuf(jb);
+ 	ret = setjmp(jb);
+ 	if (ret == 0) {
+-		if (size == 8 && (addr & 7) == 0) {
+-			dst = (char *)&tmp64;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint64_t *)addr) = tmp64;
+-		} else if (size == 4 && (addr & 3) == 0) {
+-			dst = (char *)&tmp32;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp32;
+-		} else if (size == 2 && (addr & 1) == 0) {
+-			dst = (char *)&tmp16;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp16;
++		if (!arm64_get_writable_addr(addr, &addr)) {
++			ret = 1;
+ 		} else {
+ 			dst = (char *)addr;
+-			while (size-- > 0)
++			for (i = 0; i < size; i++)
+ 				*dst++ = *data++;
+-		}
+-		dsb(ish);
++			dsb(ish);
+ 
+-		/* Clean D-cache and invalidate I-cache */
+-		cpu_dcache_wb_range(addr, (vm_size_t)size);
+-		cpu_icache_sync_range(addr, (vm_size_t)size);
++			/* Clean D-cache and invalidate I-cache */
++			cpu_dcache_wb_range(addr, (vm_size_t)size);
++			cpu_icache_sync_range(addr, (vm_size_t)size);
++		}
+ 	}
+ 	(void)kdb_jmpbuf(prev_jb);
+ 
+diff --git a/sys/arm64/arm64/machdep.c b/sys/arm64/arm64/machdep.c
+index b4a2a8cdd8e5..ad28c3369e32 100644
+--- a/sys/arm64/arm64/machdep.c
++++ b/sys/arm64/arm64/machdep.c
+@@ -362,6 +362,42 @@ init_proc0(vm_offset_t kstack)
+ 	serror_enable();
+ }
+ 
++/*
++ * Get an address to be used to write to kernel data that may be mapped
++ * read-only, e.g. to patch kernel code.
++ */
++bool
++arm64_get_writable_addr(vm_offset_t addr, vm_offset_t *out)
++{
++	vm_paddr_t pa;
++
++	/* Check if the page is writable */
++	if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++		*out = addr;
++		return (true);
++	}
++
++	/*
++	 * Find the physical address of the given page.
++	 */
++	if (!pmap_klookup(addr, &pa)) {
++		return (false);
++	}
++
++	/*
++	 * If it is within the DMAP region and is writable use that.
++	 */
++	if (PHYS_IN_DMAP(pa)) {
++		addr = PHYS_TO_DMAP(pa);
++		if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++			*out = addr;
++			return (true);
++		}
++	}
++
++	return (false);
++}
++
+ typedef struct {
+ 	uint32_t type;
+ 	uint64_t phys_start;
+diff --git a/sys/arm64/arm64/support.S b/sys/arm64/arm64/support.S
+index 4771814a9b45..c9efa592943b 100644
+--- a/sys/arm64/arm64/support.S
++++ b/sys/arm64/arm64/support.S
+@@ -227,6 +227,8 @@ END(longjmp)
+  * pagezero, simple implementation
+  */
+ ENTRY(pagezero_simple)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 1:
+@@ -236,6 +238,7 @@ ENTRY(pagezero_simple)
+ 	stp	xzr, xzr, [x0], #0x10
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_simple)
+@@ -244,6 +247,8 @@ END(pagezero_simple)
+  * pagezero, cache assisted
+  */
+ ENTRY(pagezero_cache)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 	ldr	x2, =dczva_line_size
+@@ -254,6 +259,7 @@ ENTRY(pagezero_cache)
+ 	add	x0, x0, x2
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_cache)
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+new file mode 100644
+index 000000000000..9510c71da6dd
+--- /dev/null
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -0,0 +1,19 @@
++#
++# ADVOPSYS
++#
++# Custom kernel for arm64 that includes optional kernel features required for
++# Cambridge Advanced Operating Systems (Part II / Part III / ACS).
++#
++
++#NO_UNIVERSE
++
++include		GENERIC-MMCCAM
++ident		ADVOPSYS
++
++options 	DUMMYNET
++options 	IPFIREWALL
++options 	IPFIREWALL_DEFAULT_TO_ACCEPT
++
++options 	KDB_UNATTENDED
++options 	DDB
++options 	GDB
+diff --git a/sys/arm64/include/asm.h b/sys/arm64/include/asm.h
+index 05e618500e59..63165ca35689 100644
+--- a/sys/arm64/include/asm.h
++++ b/sys/arm64/include/asm.h
+@@ -39,13 +39,13 @@
+ #define	_C_LABEL(x)	x
+ 
+ #define	LENTRY(sym)						\
+-	.text; .align 2; .type sym,#function; sym:		\
++	.text; .align 2; .type sym,#function; sym: __ ## sym ## _start: \
+ 	.cfi_startproc
+ #define	ENTRY(sym)						\
+ 	.globl sym; LENTRY(sym)
+ #define	EENTRY(sym)						\
+ 	.globl	sym; sym:
+-#define	LEND(sym) .ltorg; .cfi_endproc; .size sym, . - sym
++#define	LEND(sym) .ltorg; .cfi_endproc; .size sym, . - sym; __ ## sym ## _end:
+ #define	END(sym) LEND(sym)
+ #define	EEND(sym)
+ 
+diff --git a/sys/arm64/include/cpufunc.h b/sys/arm64/include/cpufunc.h
+index 94af62380de3..16133903841f 100644
+--- a/sys/arm64/include/cpufunc.h
++++ b/sys/arm64/include/cpufunc.h
+@@ -246,6 +246,7 @@ int arm64_icache_sync_range_checked(vm_offset_t, vm_size_t);
+ void arm64_dcache_wbinv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_inv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_wb_range(vm_offset_t, vm_size_t);
++bool arm64_get_writable_addr(vm_offset_t, vm_offset_t *);
+ 
+ #endif	/* _KERNEL */
+ #endif	/* _MACHINE_CPUFUNC_H_ */
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index db47423e9d33..087cfff097ff 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -31,6 +31,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/stack.h>
++#include <sys/sysctl.h>
+ #include <sys/pcpu.h>
+ 
+ #include <machine/frame.h>
+@@ -64,25 +65,72 @@ uint16_t dtrace_fuword16_nocheck(void *);
+ uint32_t dtrace_fuword32_nocheck(void *);
+ uint64_t dtrace_fuword64_nocheck(void *);
+ 
++extern void *__handle_el1h_irq_start;
++extern void *__handle_el1h_irq_end;
++extern void *__handle_el1h_sync_start;
++extern void *__handle_el1h_sync_end;
++
++SYSCTL_DECL(_kern_dtrace);
++
++/*
++ * Enable trap-frame handling.
++ */
++static int kern_dtrace_stack_trapframes = 1;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_trapframes, CTLFLAG_RW,
++    &kern_dtrace_stack_trapframes, 0,
++    "Enable parsing of trap frames");
++
++/*
++ * Enable handling of aframes.
++ */
++static int kern_dtrace_aframes = 1;
++SYSCTL_INT(_kern_dtrace, OID_AUTO, aframes, CTLFLAG_RW, &kern_dtrace_aframes,
++    0, "Enable processing of aframes requested by the provider");
++
++static void
++dtrace_pushstack(pc_t *pcstack, int pcstack_limit, int *aframesp, int *depthp,
++    intptr_t pc)
++{
++
++	if (*depthp == pcstack_limit)
++		return;
++	if (kern_dtrace_aframes && aframesp != NULL) {
++		if ((*aframesp) > 0) {
++			(*aframesp)--;
++			return;
++		}
++	}
++	pcstack[*depthp] = pc;
++	(*depthp)++;
++}
++
++static int
++dtrace_el1_handler_pc(register_t pc)
++{
++
++	return ((pc >= (uintptr_t)&__handle_el1h_irq_start &&
++	     pc < (uintptr_t)&__handle_el1h_irq_end) ||
++	    (pc >= (uintptr_t)&__handle_el1h_sync_start &&
++	     pc < (uintptr_t)&__handle_el1h_sync_end));
++}
++
+ void
+ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+     uint32_t *intrpc)
+ {
+-	struct unwind_state state;
++	struct unwind_state state, nextframe_state;
++	struct trapframe *tf;
+ 	int scp_offset;
+-	register_t sp;
++	register_t sp, exception_lr, non_exception_lr;
++	void *pc_prior;
++	int pc_found;
+ 	int depth;
+ 
+ 	depth = 0;
+-
+-	if (intrpc != 0) {
+-		pcstack[depth++] = (pc_t) intrpc;
+-	}
+-
+-	aframes++;
++	pc_found = 0;
++	pc_prior = NULL;
+ 
+ 	__asm __volatile("mov %0, sp" : "=&r" (sp));
+-
+ 	state.fp = (uintptr_t)__builtin_frame_address(0);
+ 	state.sp = sp;
+ 	state.pc = (uintptr_t)dtrace_getpcstack;
+@@ -94,16 +142,75 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 			break;
+ 
+ 		/*
+-		 * NB: Unlike some other architectures, we don't need to
+-		 * explicitly insert cpu_dtrace_caller as it appears in the
+-		 * normal kernel stack trace rather than a special trap frame.
++		 * If the stack frame belongs to either the _sync or _irq EL1
++		 * exception handler, then we expect an adjacent trapframe
++		 * from which we can also extract state.  Using that frame's
++		 * ELR (and perhaps LR) will give a more accurate stack trace
++		 * than using the synthetic frame pushed by the exception
++		 * handler.
+ 		 */
+-		if (aframes > 0) {
+-			aframes--;
++		if (kern_dtrace_stack_trapframes &&
++		    dtrace_el1_handler_pc(state.pc)) {
++			/*
++			 * Print the exception-handler PC reliably first.
++			 */
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, state.pc);
++
++			/*
++			 * Now find and inspect the stack frame.
++			 */
++			tf = (struct trapframe *)(uintptr_t)state.fp - 1;
++
++			/*
++			 * XXX: We need to handle the case where there's no
++			 * stack frame for the preempted function, and so we
++			 * skip a frame.  But how to distinguish from the
++			 * other cases?  For now, insert LR twice rather than
++			 * no times, but need to do better.
++			 */
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, tf->tf_elr);
++
++			/*
++			 * NB: As with unwind_state(), trim 4 from LR to give
++			 * what is presumed to be the caller site, not the
++			 * LR target.
++			 */
++			pc_prior = (void *)(tf->tf_lr - 4);
++			dtrace_pushstack(pcstack, pcstack_limit, &aframes,
++			    &depth, tf->tf_lr - 4);
++
++			/*
++			 * Use exception frame to find the next stack frame
++			 * up.
++			 *
++			 * XXXRW: What if it has no frame .. should we be
++			 * using LR instead ..?
++			 */
++			state.fp = tf->tf_x[29];
++			state.pc = tf->tf_elr;
++			if (!INKERNEL(state.pc))
++				break;
++			if (!INKERNEL(state.fp))
++				break;
+ 		} else {
+-			pcstack[depth++] = state.pc;
++			/*
++			 * Print a regular frame.
++			 *
++			 * If the PC is identical to the one we just printed
++			 * on the way out of an exception return, suppress the
++			 * duplicate.  Most likely we were in a function
++			 * that didn't have its own stack frame (e.g.,
++			 * memcpy).  In the kernel, it's unlikely to be a
++			 * recursive call.
++			 */
++			if (pc_prior == NULL ||
++			    (pc_prior != NULL && pc_prior != (void *)state.pc))
++				dtrace_pushstack(pcstack, pcstack_limit,
++				    &aframes, &depth, state.pc);
++			pc_prior = NULL;
+ 		}
+-
+ 	}
+ 
+ 	for (; depth < pcstack_limit; depth++) {
+diff --git a/sys/cddl/dev/fbt/aarch64/fbt_isa.c b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+index 6bc351ad74f6..cbfbb4778176 100644
+--- a/sys/cddl/dev/fbt/aarch64/fbt_isa.c
++++ b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+@@ -74,8 +74,12 @@ fbt_invop(uintptr_t addr, struct trapframe *frame, uintptr_t rval)
+ void
+ fbt_patch_tracepoint(fbt_probe_t *fbt, fbt_patchval_t val)
+ {
++	vm_offset_t addr;
+ 
+-	*fbt->fbtp_patchpoint = val;
++	if (!arm64_get_writable_addr((vm_offset_t)fbt->fbtp_patchpoint, &addr))
++		panic("%s: Unable to write new instruction", __func__);
++
++	*(fbt_patchval_t *)addr = val;
+ 	cpu_icache_sync_range((vm_offset_t)fbt->fbtp_patchpoint, 4);
+ }
+ 
+diff --git a/sys/kern/sys_pipe.c b/sys/kern/sys_pipe.c
+index b19fe8dbc0c0..e157486b2a7f 100644
+--- a/sys/kern/sys_pipe.c
++++ b/sys/kern/sys_pipe.c
+@@ -209,6 +209,7 @@ static int pipefragretry;
+ static int pipeallocfail;
+ static int piperesizefail;
+ static int piperesizeallowed = 1;
++static long pipe_mindirect = PIPE_MINDIRECT;
+ 
+ SYSCTL_LONG(_kern_ipc, OID_AUTO, maxpipekva, CTLFLAG_RDTUN | CTLFLAG_NOFETCH,
+ 	   &maxpipekva, 0, "Pipe KVA limit");
+@@ -222,6 +223,8 @@ SYSCTL_INT(_kern_ipc, OID_AUTO, piperesizefail, CTLFLAG_RD,
+ 	  &piperesizefail, 0, "Pipe resize failures");
+ SYSCTL_INT(_kern_ipc, OID_AUTO, piperesizeallowed, CTLFLAG_RW,
+ 	  &piperesizeallowed, 0, "Pipe resizing allowed");
++SYSCTL_LONG(_kern_ipc, OID_AUTO, pipe_mindirect, CTLFLAG_RWTUN,
++	  &pipe_mindirect, 0, "Pipe minimum I/OO size for VM optimization");
+ 
+ static void pipeinit(void *dummy __unused);
+ static void pipeclose(struct pipe *cpipe);
+@@ -1141,8 +1144,8 @@ pipe_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
+ 		 * away on us.
+ 		 */
+ 		if (uio->uio_segflg == UIO_USERSPACE &&
+-		    uio->uio_iov->iov_len >= PIPE_MINDIRECT &&
+-		    wpipe->pipe_buffer.size >= PIPE_MINDIRECT &&
++		    uio->uio_iov->iov_len >= pipe_mindirect &&
++		    wpipe->pipe_buffer.size >= pipe_mindirect &&
+ 		    (fp->f_flag & FNONBLOCK) == 0) {
+ 			error = pipe_direct_write(wpipe, uio);
+ 			if (error != 0)
