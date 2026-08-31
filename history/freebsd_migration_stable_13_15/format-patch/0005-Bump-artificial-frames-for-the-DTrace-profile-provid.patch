@@ -1,0 +1,26 @@
+From 7ce8968df41f3606140a2fd7a45b8f6e388f03ec Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Mon, 22 Feb 2021 17:58:25 +0000
+Subject: [PATCH 05/19] Bump artificial frames for the DTrace profile provider
+ on aarch64.
+
+---
+ sys/cddl/dev/profile/profile.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/cddl/dev/profile/profile.c b/sys/cddl/dev/profile/profile.c
+index 4fc9f6f22eef..bffcbf073092 100644
+--- a/sys/cddl/dev/profile/profile.c
++++ b/sys/cddl/dev/profile/profile.c
+@@ -141,7 +141,7 @@ struct profile_probe_percpu;
+ 
+ #ifdef __aarch64__
+ /* TODO: verify */
+-#define	PROF_ARTIFICIAL_FRAMES	10
++#define	PROF_ARTIFICIAL_FRAMES	11
+ #endif
+ 
+ #ifdef __riscv
+-- 
+2.55.0
+

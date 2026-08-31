@@ -1,0 +1,31 @@
+From 0437fdcead5a211a20cba593ab5b7d9a332e3e91 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Thu, 30 Dec 2021 00:59:15 +0000
+Subject: [PATCH 15/19] Exclude hwpmc from FBT instrumentation, although a
+ better fix would be more desirable.
+
+---
+ sys/cddl/dev/fbt/fbt.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/sys/cddl/dev/fbt/fbt.c b/sys/cddl/dev/fbt/fbt.c
+index 3bad4243c040..5abe70c0f36c 100644
+--- a/sys/cddl/dev/fbt/fbt.c
++++ b/sys/cddl/dev/fbt/fbt.c
+@@ -201,6 +201,13 @@ fbt_provide_module(void *arg, modctl_t *lf)
+ 	if (strcmp(modname, "dtrace") == 0)
+ 		return;
+ 
++	/*
++	 * HWPMC: Just not going there, due to its potential to instrument
++	 * DTrace itself.
++	 */
++	if (strcmp(modname, "hwpmc") == 0)
++		return;
++
+ 	/*
+ 	 * To register with DTrace, a module must list 'dtrace' as a
+ 	 * dependency in order for the kernel linker to resolve
+-- 
+2.55.0
+

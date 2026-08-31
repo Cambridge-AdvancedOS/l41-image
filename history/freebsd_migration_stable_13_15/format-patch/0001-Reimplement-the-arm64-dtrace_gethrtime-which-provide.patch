@@ -1,0 +1,61 @@
+From 07f6b99e20096c463b23e52231b50a18f6fe3ee4 Mon Sep 17 00:00:00 2001
+From: Robert Watson <rwatson@FreeBSD.org>
+Date: Tue, 16 Feb 2021 15:19:05 +0000
+Subject: [PATCH 01/19] Reimplement the arm64 dtrace_gethrtime(), which
+ provides the high-resolution nanosecond timestamp used for the DTrace
+ 'timestamp' built-in variable.  The new implementation uses the EL0 cycle
+ counter and frequency registers in ARMv8-A.  This replaces a previous
+ implementation that relied on an instrumentation-safe implementation of
+ getnanotime(), which provided only timer resolution.
+
+MFC after:	3 days
+Reviewed by:	andrew, bsdimp (older version)
+Useful comments appreciated:	jrtc27, emaste
+---
+ sys/cddl/dev/dtrace/aarch64/dtrace_subr.c | 23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c b/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
+index 6646e51fc191..9bf9f0798bb5 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_subr.c
+@@ -153,23 +153,26 @@ dtrace_sync(void)
+ }
+ 
+ /*
+- * DTrace needs a high resolution time function which can
+- * be called from a probe context and guaranteed not to have
+- * instrumented with probes itself.
++ * DTrace needs a high resolution time function which can be called from a
++ * probe context and guaranteed not to have instrumented with probes itself.
+  *
+- * Returns nanoseconds since boot.
++ * Returns nanoseconds since some arbitrary point in time (likely SoC reset?).
+  */
+ uint64_t
+-dtrace_gethrtime()
++dtrace_gethrtime(void)
+ {
+-	struct timespec curtime;
+-
+-	dtrace_getnanouptime(&curtime);
+-
+-	return (curtime.tv_sec * 1000000000UL + curtime.tv_nsec);
++	uint64_t count, freq;
+ 
++	count = READ_SPECIALREG(cntvct_el0);
++	freq = READ_SPECIALREG(cntfrq_el0);
++	return ((1000000000UL * count) / freq);
+ }
+ 
++/*
++ * Return a much lower resolution wallclock time based on the system clock
++ * updated by the timer.  If needed, we could add a version interpolated from
++ * the system clock as is the case with dtrace_gethrtime().
++ */
+ uint64_t
+ dtrace_gethrestime(void)
+ {
+-- 
+2.55.0
+

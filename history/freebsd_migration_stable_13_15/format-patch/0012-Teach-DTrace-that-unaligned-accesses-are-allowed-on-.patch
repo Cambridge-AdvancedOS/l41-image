@@ -1,0 +1,26 @@
+From b149a9781d9e9c6fbc3aabc2191bf80d26209455 Mon Sep 17 00:00:00 2001
+From: Robert Watson <rwatson@FreeBSD.org>
+Date: Mon, 22 Mar 2021 01:47:41 +0000
+Subject: [PATCH 12/19] Teach DTrace that unaligned accesses are allowed on
+ aarch64, not just x86.
+
+---
+ sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c b/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
+index b212185a4578..ca6fa5481856 100644
+--- a/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
++++ b/sys/cddl/contrib/opensolaris/uts/common/dtrace/dtrace.c
+@@ -475,7 +475,7 @@ static kmutex_t dtrace_errlock;
+ #define	DTRACE_STORE(type, tomax, offset, what) \
+ 	*((type *)((uintptr_t)(tomax) + (uintptr_t)offset)) = (type)(what);
+ 
+-#ifndef __x86
++#if !defined(__x86) && !defined(__aarch64__)
+ #define	DTRACE_ALIGNCHECK(addr, size, flags)				\
+ 	if (addr & (size - 1)) {					\
+ 		*flags |= CPU_DTRACE_BADALIGN;				\
+-- 
+2.55.0
+

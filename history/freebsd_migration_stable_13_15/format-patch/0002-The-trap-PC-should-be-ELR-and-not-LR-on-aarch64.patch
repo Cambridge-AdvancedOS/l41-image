@@ -1,0 +1,25 @@
+From 6d50512513ac85acc0941caaec17f22686960e92 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Mon, 22 Feb 2021 17:57:00 +0000
+Subject: [PATCH 02/19] The trap PC should be ELR and not LR on aarch64.
+
+---
+ sys/arm64/include/cpu.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/arm64/include/cpu.h b/sys/arm64/include/cpu.h
+index 529f156f2e96..ab1a1666cbe1 100644
+--- a/sys/arm64/include/cpu.h
++++ b/sys/arm64/include/cpu.h
+@@ -45,7 +45,7 @@
+ #include <machine/frame.h>
+ #include <machine/armreg.h>
+ 
+-#define	TRAPF_PC(tfp)		((tfp)->tf_lr)
++#define	TRAPF_PC(tfp)		((tfp)->tf_elr)
+ #define	TRAPF_USERMODE(tfp)	(((tfp)->tf_spsr & PSR_M_MASK) == PSR_M_EL0t)
+ 
+ #define	cpu_getstack(td)	((td)->td_frame->tf_sp)
+-- 
+2.55.0
+

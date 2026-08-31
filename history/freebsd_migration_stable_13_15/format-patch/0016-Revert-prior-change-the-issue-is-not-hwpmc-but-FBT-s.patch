@@ -1,0 +1,31 @@
+From 7f509b835c13332f0a669b00078105178c418a2c Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Thu, 30 Dec 2021 20:43:51 +0000
+Subject: [PATCH 16/19] Revert prior change; the issue is not hwpmc, but FBT
+ support for modules on aarch64.
+
+---
+ sys/cddl/dev/fbt/fbt.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/sys/cddl/dev/fbt/fbt.c b/sys/cddl/dev/fbt/fbt.c
+index 5abe70c0f36c..3bad4243c040 100644
+--- a/sys/cddl/dev/fbt/fbt.c
++++ b/sys/cddl/dev/fbt/fbt.c
+@@ -201,13 +201,6 @@ fbt_provide_module(void *arg, modctl_t *lf)
+ 	if (strcmp(modname, "dtrace") == 0)
+ 		return;
+ 
+-	/*
+-	 * HWPMC: Just not going there, due to its potential to instrument
+-	 * DTrace itself.
+-	 */
+-	if (strcmp(modname, "hwpmc") == 0)
+-		return;
+-
+ 	/*
+ 	 * To register with DTrace, a module must list 'dtrace' as a
+ 	 * dependency in order for the kernel linker to resolve
+-- 
+2.55.0
+

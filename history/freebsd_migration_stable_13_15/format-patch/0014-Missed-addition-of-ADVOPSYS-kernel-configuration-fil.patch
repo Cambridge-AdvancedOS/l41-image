@@ -1,0 +1,34 @@
+From 8b764377574e0333ef12d245fd7c2d2566b373d3 Mon Sep 17 00:00:00 2001
+From: Robert Watson <rwatson@FreeBSD.org>
+Date: Mon, 29 Mar 2021 12:15:53 +0100
+Subject: [PATCH 14/19] Missed addition of ADVOPSYS kernel configuration file.
+
+---
+ sys/arm64/conf/ADVOPSYS | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+ create mode 100644 sys/arm64/conf/ADVOPSYS
+
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+new file mode 100644
+index 000000000000..6b555dad3392
+--- /dev/null
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -0,0 +1,15 @@
++#
++# ADVOPSYS
++#
++# Custom kernel for arm64 that includes optional kernel features required for
++# Cambridge Advanced Operating Systems (Part II / Part III / ACS).
++#
++
++#NO_UNIVERSE
++
++include		GENERIC-MMCCAM
++ident		ADVOPSYS
++
++options 	DUMMYNET
++options 	IPFIREWALL
++options 	IPFIREWALL_DEFAULT_TO_ACCEPT
+-- 
+2.55.0
+

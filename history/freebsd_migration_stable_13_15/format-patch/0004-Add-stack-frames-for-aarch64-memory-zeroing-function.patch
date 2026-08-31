@@ -1,0 +1,73 @@
+From 667601043f177c7457bb9971404f4b49a8d55ab8 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Mon, 22 Feb 2021 17:57:36 +0000
+Subject: [PATCH 04/19] Add stack frames for aarch64 memory-zeroing functions.
+
+With this change they are more visible in stack traces.
+---
+ sys/arm64/arm64/bzero.S   | 3 +++
+ sys/arm64/arm64/support.S | 6 ++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/sys/arm64/arm64/bzero.S b/sys/arm64/arm64/bzero.S
+index 6c7f1fef1494..1a95a7b99140 100644
+--- a/sys/arm64/arm64/bzero.S
++++ b/sys/arm64/arm64/bzero.S
+@@ -39,6 +39,8 @@ __FBSDID("$FreeBSD$");
+ 	 *  x1 - size
+ 	 */
+ ENTRY(bzero)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	cbz	x1, ending
+ 
+ 	/*
+@@ -200,6 +202,7 @@ cache_line_zero:
+ 	b.ne	normal
+ 
+ ending:
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(bzero)
+diff --git a/sys/arm64/arm64/support.S b/sys/arm64/arm64/support.S
+index 4771814a9b45..c9efa592943b 100644
+--- a/sys/arm64/arm64/support.S
++++ b/sys/arm64/arm64/support.S
+@@ -227,6 +227,8 @@ END(longjmp)
+  * pagezero, simple implementation
+  */
+ ENTRY(pagezero_simple)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 1:
+@@ -236,6 +238,7 @@ ENTRY(pagezero_simple)
+ 	stp	xzr, xzr, [x0], #0x10
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_simple)
+@@ -244,6 +247,8 @@ END(pagezero_simple)
+  * pagezero, cache assisted
+  */
+ ENTRY(pagezero_cache)
++	stp	x29, x30, [sp, #-16]!
++	mov	x29, sp
+ 	add	x1, x0, #PAGE_SIZE
+ 
+ 	ldr	x2, =dczva_line_size
+@@ -254,6 +259,7 @@ ENTRY(pagezero_cache)
+ 	add	x0, x0, x2
+ 	cmp	x0, x1
+ 	b.ne	1b
++	ldp	x29, x30, [sp], #16
+ 	ret
+ 
+ END(pagezero_cache)
+-- 
+2.55.0
+

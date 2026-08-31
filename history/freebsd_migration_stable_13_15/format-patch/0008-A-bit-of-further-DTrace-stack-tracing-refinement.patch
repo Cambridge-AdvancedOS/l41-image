@@ -1,0 +1,64 @@
+From c1bcab1791c32db993e8b86b1383f872d1e75aa3 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Tue, 23 Feb 2021 00:45:18 +0000
+Subject: [PATCH 08/19] A bit of further DTrace stack tracing refinement.
+
+(1) If intrpc is set to 0, ignore it and use aframes.  Some providers
+    do not set this even though they do all use traps (?).
+
+(2) When injecting debug state into the stack trace, replace 0 with
+    -1 to avoid terminating the trace prematurely: userspace DTrace
+    stops printing if it hits a PC of zero.
+---
+ sys/cddl/dev/dtrace/aarch64/dtrace_isa.c | 25 ++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index 9df79cab36d4..615fc3a167b5 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -190,9 +190,10 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 		intrpc = (void *)(pc_t)solaris_cpu[curcpu].cpu_dtrace_caller;
+ 
+ 	/*
+-	 * Can't search for the intrpc if we don't process trapframes.
++	 * Can't search for the intrpc if we don't process trapframes, or if
++	 * the caller fails to provide an intrpc value.
+ 	 */
+-	if (!kern_dtrace_stack_trapframes)
++	if (!kern_dtrace_stack_trapframes || intrpc == 0)
+ 		kern_dtrace_stack_start_at_intrpc = 0;
+ 
+ 	/*
+@@ -212,12 +213,24 @@ dtrace_getpcstack(pc_t *pcstack, int pcstack_limit, int aframes,
+ 	state.pc = (uintptr_t)dtrace_getpcstack;
+ 
+ 	if (kern_dtrace_pcstack_debug) {
++		/*
++		 * A zero PC causes the stack printer to terminate, so
++		 * substitute a non-zero value if required.
++		 */
+ 		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+ 		    &depth, 0x2b2b);
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, (uintptr_t)intrpc);
+-		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+-		    &depth, aframes);
++		if ((uintptr_t)intrpc != 0)
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, (uintptr_t)intrpc);
++		else
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, -1);
++		if (aframes != 0)
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, aframes);
++		else
++			dtrace_pushstack_nopcfound(pcstack, pcstack_limit,
++			    NULL, &depth, -1);
+ 		dtrace_pushstack_nopcfound(pcstack, pcstack_limit, NULL,
+ 		    &depth, 0x2b2b);
+ 	}
+-- 
+2.55.0
+

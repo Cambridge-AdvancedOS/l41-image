@@ -1,0 +1,28 @@
+From 203ded563e39fac645e3f397e3d6dbbd16fab31e Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Tue, 23 Feb 2021 00:25:30 +0000
+Subject: [PATCH 07/19] Enable use of intrpc by default, avoiding the use of
+ aframes in stack(). The profile and fbt providers seem to produce more
+ reliable starts to their stack traces with this option enabled, which should
+ also be more robust to compiler inlining, etc.
+
+---
+ sys/cddl/dev/dtrace/aarch64/dtrace_isa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+index da4fdf09469c..9df79cab36d4 100644
+--- a/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
++++ b/sys/cddl/dev/dtrace/aarch64/dtrace_isa.c
+@@ -83,7 +83,7 @@ SYSCTL_INT(_kern_dtrace, OID_AUTO, pcstack_aframes_zero, CTLFLAG_RW,
+ /*
+  * Only record frames at or after the passed PC value.
+  */
+-static int kern_dtrace_stack_start_at_intrpc = 0;
++static int kern_dtrace_stack_start_at_intrpc = 1;
+ SYSCTL_INT(_kern_dtrace, OID_AUTO, stack_start_at_intrpc, CTLFLAG_RW,
+     &kern_dtrace_stack_start_at_intrpc, 0,
+     "Only record stack frames once we've hit the exception PC");
+-- 
+2.55.0
+

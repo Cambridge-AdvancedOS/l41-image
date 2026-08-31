@@ -1,0 +1,22 @@
+From 30d515156a5ce7a12d0f5c1db6a19c6c63a85798 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Fri, 31 Dec 2021 23:40:56 +0000
+Subject: [PATCH 18/19] Enable kernel GDB support in the ADVOPSYS kernel
+ configuration.
+
+---
+ sys/arm64/conf/ADVOPSYS | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sys/arm64/conf/ADVOPSYS b/sys/arm64/conf/ADVOPSYS
+index 89e9192d9b4b..9510c71da6dd 100644
+--- a/sys/arm64/conf/ADVOPSYS
++++ b/sys/arm64/conf/ADVOPSYS
+@@ -16,3 +16,4 @@ options 	IPFIREWALL_DEFAULT_TO_ACCEPT
+ 
+ options 	KDB_UNATTENDED
+ options 	DDB
++options 	GDB
+-- 
+2.55.0
+

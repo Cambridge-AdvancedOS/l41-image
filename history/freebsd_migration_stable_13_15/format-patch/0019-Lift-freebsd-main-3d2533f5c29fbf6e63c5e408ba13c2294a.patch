@@ -1,0 +1,162 @@
+From d7fd9d009ea8db8dd50e0602eae91ca50d6bad31 Mon Sep 17 00:00:00 2001
+From: "Robert N. M. Watson" <robert.watson@cl.cam.ac.uk>
+Date: Fri, 31 Dec 2021 23:54:33 +0000
+Subject: [PATCH 19/19] Lift freebsd/main
+ 3d2533f5c29fbf6e63c5e408ba13c2294a7612fd, which corrects a regression in
+ which DDB and DTrace are unable to instrument code in kernel modules.
+
+commit 3d2533f5c29fbf6e63c5e408ba13c2294a7612fd
+Author: Andrew Turner <andrew@FreeBSD.org>
+Date:   Tue Sep 21 17:10:57 2021 +0000
+
+    Allow ddb and dtrace use the DMAP region on arm64
+
+    When writing to memory on arm64 we may be trying to be accessing a
+    read-only page. In this case try to access via the DMAP region to
+    get a writable location.
+
+    While here simplify writing data in DDB and stop trashing the size as
+    it is passed into the cache handling functions.
+
+    Sponsored by:   The FreeBSD Foundation
+    Differential Revision: https://reviews.freebsd.org/D32053
+---
+ sys/arm64/arm64/db_interface.c     | 33 ++++++++-------------------
+ sys/arm64/arm64/machdep.c          | 36 ++++++++++++++++++++++++++++++
+ sys/arm64/include/cpufunc.h        |  1 +
+ sys/cddl/dev/fbt/aarch64/fbt_isa.c |  6 ++++-
+ 4 files changed, 51 insertions(+), 25 deletions(-)
+
+diff --git a/sys/arm64/arm64/db_interface.c b/sys/arm64/arm64/db_interface.c
+index 5138bf3f1cab..289886658905 100644
+--- a/sys/arm64/arm64/db_interface.c
++++ b/sys/arm64/arm64/db_interface.c
+@@ -154,39 +154,24 @@ db_write_bytes(vm_offset_t addr, size_t size, char *data)
+ 	jmp_buf jb;
+ 	void *prev_jb;
+ 	char *dst;
++	size_t i;
+ 	int ret;
+-	uint64_t tmp64;
+-	uint32_t tmp32;
+-	uint16_t tmp16;
+ 
+ 	prev_jb = kdb_jmpbuf(jb);
+ 	ret = setjmp(jb);
+ 	if (ret == 0) {
+-		if (size == 8 && (addr & 7) == 0) {
+-			dst = (char *)&tmp64;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint64_t *)addr) = tmp64;
+-		} else if (size == 4 && (addr & 3) == 0) {
+-			dst = (char *)&tmp32;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp32;
+-		} else if (size == 2 && (addr & 1) == 0) {
+-			dst = (char *)&tmp16;
+-			while (size-- > 0)
+-				*dst++ = *data++;
+-			*((uint32_t *)addr) = tmp16;
++		if (!arm64_get_writable_addr(addr, &addr)) {
++			ret = 1;
+ 		} else {
+ 			dst = (char *)addr;
+-			while (size-- > 0)
++			for (i = 0; i < size; i++)
+ 				*dst++ = *data++;
+-		}
+-		dsb(ish);
++			dsb(ish);
+ 
+-		/* Clean D-cache and invalidate I-cache */
+-		cpu_dcache_wb_range(addr, (vm_size_t)size);
+-		cpu_icache_sync_range(addr, (vm_size_t)size);
++			/* Clean D-cache and invalidate I-cache */
++			cpu_dcache_wb_range(addr, (vm_size_t)size);
++			cpu_icache_sync_range(addr, (vm_size_t)size);
++		}
+ 	}
+ 	(void)kdb_jmpbuf(prev_jb);
+ 
+diff --git a/sys/arm64/arm64/machdep.c b/sys/arm64/arm64/machdep.c
+index b4a2a8cdd8e5..ad28c3369e32 100644
+--- a/sys/arm64/arm64/machdep.c
++++ b/sys/arm64/arm64/machdep.c
+@@ -362,6 +362,42 @@ init_proc0(vm_offset_t kstack)
+ 	serror_enable();
+ }
+ 
++/*
++ * Get an address to be used to write to kernel data that may be mapped
++ * read-only, e.g. to patch kernel code.
++ */
++bool
++arm64_get_writable_addr(vm_offset_t addr, vm_offset_t *out)
++{
++	vm_paddr_t pa;
++
++	/* Check if the page is writable */
++	if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++		*out = addr;
++		return (true);
++	}
++
++	/*
++	 * Find the physical address of the given page.
++	 */
++	if (!pmap_klookup(addr, &pa)) {
++		return (false);
++	}
++
++	/*
++	 * If it is within the DMAP region and is writable use that.
++	 */
++	if (PHYS_IN_DMAP(pa)) {
++		addr = PHYS_TO_DMAP(pa);
++		if (PAR_SUCCESS(arm64_address_translate_s1e1w(addr))) {
++			*out = addr;
++			return (true);
++		}
++	}
++
++	return (false);
++}
++
+ typedef struct {
+ 	uint32_t type;
+ 	uint64_t phys_start;
+diff --git a/sys/arm64/include/cpufunc.h b/sys/arm64/include/cpufunc.h
+index 94af62380de3..16133903841f 100644
+--- a/sys/arm64/include/cpufunc.h
++++ b/sys/arm64/include/cpufunc.h
+@@ -246,6 +246,7 @@ int arm64_icache_sync_range_checked(vm_offset_t, vm_size_t);
+ void arm64_dcache_wbinv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_inv_range(vm_offset_t, vm_size_t);
+ void arm64_dcache_wb_range(vm_offset_t, vm_size_t);
++bool arm64_get_writable_addr(vm_offset_t, vm_offset_t *);
+ 
+ #endif	/* _KERNEL */
+ #endif	/* _MACHINE_CPUFUNC_H_ */
+diff --git a/sys/cddl/dev/fbt/aarch64/fbt_isa.c b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+index 6bc351ad74f6..cbfbb4778176 100644
+--- a/sys/cddl/dev/fbt/aarch64/fbt_isa.c
++++ b/sys/cddl/dev/fbt/aarch64/fbt_isa.c
+@@ -74,8 +74,12 @@ fbt_invop(uintptr_t addr, struct trapframe *frame, uintptr_t rval)
+ void
+ fbt_patch_tracepoint(fbt_probe_t *fbt, fbt_patchval_t val)
+ {
++	vm_offset_t addr;
+ 
+-	*fbt->fbtp_patchpoint = val;
++	if (!arm64_get_writable_addr((vm_offset_t)fbt->fbtp_patchpoint, &addr))
++		panic("%s: Unable to write new instruction", __func__);
++
++	*(fbt_patchval_t *)addr = val;
+ 	cpu_icache_sync_range((vm_offset_t)fbt->fbtp_patchpoint, 4);
+ }
+ 
+-- 
+2.55.0
+
